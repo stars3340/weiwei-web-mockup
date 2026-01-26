@@ -1,33 +1,32 @@
 :root {
   /* AppColors from DesignSystem.swift */
-  --bg-top: rgb(26, 13, 51);
-  /* #1A0D33 */
-  --bg-mid: rgb(13, 5, 26);
-  /* #0D051A */
+  /* Color(red: 0.1, green: 0.05, blue: 0.2) -> rgb(26, 13, 51) */
+  --bg-top: #1A0D33;
+  /* Color(red: 0.05, green: 0.02, blue: 0.1) -> rgb(13, 5, 26) */
+  --bg-mid: #0D051A;
   --bg-bot: #000000;
 
-  --brand: rgb(89, 179, 255);
-  /* #59B3FF */
+  /* AppColors.accentBlue = Color(red: 0.35, green: 0.7, blue: 1.0) -> #59B3FF */
+  --brand: #59B3FF;
   --brand-glow: rgba(89, 179, 255, 0.4);
 
+  /* Standard iOS System Colors */
   --success: #34C759;
   --warning: #FFCC00;
   --danger: #FF3B30;
 
-  --text-primary: #ffffff;
+  --text-primary: #FFFFFF;
   --text-secondary: rgba(255, 255, 255, 0.85);
-  /* 0.86 in swift but 0.85 ok */
   --text-tertiary: rgba(255, 255, 255, 0.5);
 
+  /* GlassCard Params */
+  /* .ultraThinMaterial is approx backdrop-filter blur(20px) sat(180%) brightness(120%) but web is simpler */
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-stroke: rgba(255, 255, 255, 0.15);
-  /* DesignSystem.swift: 0.15 */
   --glass-blur: blur(20px);
 
   --card-radius: 24px;
-  /* GlassCard cornerRadius: 24 */
   --btn-radius: 16px;
-  /* ZKFXPrimaryButtonStyle cornerRadius: 16 */
 }
 
 * {
@@ -36,19 +35,21 @@
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  font-family: "SF Pro Rounded", "SF Pro", -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro", "Inter", sans-serif;
   background-color: var(--bg-bot);
   color: var(--text-primary);
   overflow: hidden;
   height: 100vh;
   width: 100vw;
+  /* Use fixed layout to match mobile app feel */
+  position: fixed;
 }
 
-/* Background Gradient from DesignSystem.swift */
-/* ZKFXBackground logic: LinearGradient + FluidCanvas */
+/* ZKFXBackground: Linear Gradient Main + Fluid Canvas Overlay */
 .zkfx-bg {
   position: absolute;
   top: 0;
@@ -56,98 +57,39 @@ body {
   width: 100%;
   height: 100%;
   z-index: -2;
-  background: linear-gradient(to bottom right, var(--bg-top), var(--bg-mid), var(--bg-bot));
+  /* startPoint: .topLeading, endPoint: .bottomTrailing */
+  background: linear-gradient(135deg, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bot) 100%);
 }
 
-/* Canvas Fluid Blob Animation */
-/* Mocking FluidCanvas.swift with CSS animations for blobs */
 .fluid-canvas {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: -1;
   opacity: 0.6;
   filter: blur(60px);
-  overflow: hidden;
   pointer-events: none;
 }
 
 .fluid-blob {
   position: absolute;
   border-radius: 50%;
-  animation: float 20s infinite ease-in-out;
+  /* Swift: animation(.easeInOut(duration: ...).repeatForever()) */
 }
 
-/* Blob 1: Blue/Brand */
-.blob-1 {
-  width: 300px;
-  height: 300px;
-  background: rgba(89, 179, 255, 0.25);
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation-duration: 18s;
-}
-
-/* Blob 2: Purple/Secondary */
-.blob-2 {
-  width: 360px;
-  height: 360px;
-  background: rgba(81, 51, 153, 0.15);
-  /* rgb(0.32, 0.20, 0.60) */
-  top: 70%;
-  left: 20%;
-  animation-duration: 22s;
-  animation-delay: -5s;
-}
-
-/* Blob 3: Accent/Glow */
-.blob-3 {
-  width: 200px;
-  height: 200px;
-  background: rgba(89, 179, 255, 0.1);
-  /* brandGlow opacity 0.1 */
-  top: 20%;
-  right: 20%;
-  animation-duration: 25s;
-  animation-delay: -10s;
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-}
-
-/* --- Components --- */
-
-/* GlassCard.swift */
+/* GlassCard.swift implementation */
 .glass-card {
+  position: relative;
   background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  /* .ultraThinMaterial approx */
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border-radius: var(--card-radius);
-  border: 1px solid var(--glass-stroke);
-  /* shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10) */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  /* overlay stroke hack to match SwiftUI .overlay(stroke) alignment */
+  box-shadow: inset 0 0 0 1px var(--glass-stroke), 0 20px 40px rgba(0, 0, 0, 0.35);
+  /* Shadow radius 20 y 10 matches Swift */
   padding: 14px;
-  /* ZKFXCard padding */
 }
 
-/* ZKFXPrimaryButtonStyle */
+/* Buttons */
 .btn-primary {
   width: 100%;
   height: 54px;
@@ -156,13 +98,15 @@ body {
   border-radius: var(--btn-radius);
   font-size: 16px;
   font-weight: 700;
+  /* .bold */
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  /* stroke */
+  /* overlay stroke */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   cursor: pointer;
   transition: opacity 0.2s, transform 0.1s;
+  border: none;
 }
 
 .btn-primary:active {
@@ -170,22 +114,24 @@ body {
   transform: scale(0.98);
 }
 
-/* ZKFXSecondaryButtonStyle */
 .btn-secondary {
   width: 100%;
   height: 50px;
   background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.86);
+  color: rgba(255, 255, 255, 0.85);
+  /* textPrimary 0.86 */
   border-radius: var(--btn-radius);
-  font-size: 14px;
-  /* swift says 15 in places, but buttonStyle says default? label font is often 14 semibold */
+  font-size: 15px;
+  /* Swift ZKFXSecondaryButtonStyle often uses system default but label in rows is 14/15 */
   font-weight: 600;
+  /* .semibold */
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
+  border: none;
 }
 
 .btn-secondary:active {
@@ -236,16 +182,17 @@ body {
   padding: 0 12px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   gap: 10px;
   cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  border: none;
 }
 
 .option-row.selected {
   background: rgba(89, 179, 255, 0.16);
-  border-color: rgba(89, 179, 255, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(89, 179, 255, 0.55);
 }
 
 /* Module Row */
@@ -254,24 +201,66 @@ body {
   padding: 0 12px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   gap: 12px;
   cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  border: none;
 }
 
 .module-row.selected {
   background: rgba(89, 179, 255, 0.14);
-  border-color: rgba(89, 179, 255, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(89, 179, 255, 0.55);
 }
 
-/* Typography map to Swift */
-.font-rounded {
-  font-family: "SF Pro Rounded", system-ui, sans-serif;
-}
-
-/* Utilities */
 .safe-area-bottom {
-  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+/* Animation Blobs - keep same animation keyframes */
+.blob-1 {
+  width: 300px;
+  height: 300px;
+  background: rgba(89, 179, 255, 0.25);
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: float 18s infinite ease-in-out;
+}
+
+.blob-2 {
+  width: 360px;
+  height: 360px;
+  background: rgba(81, 51, 153, 0.15);
+  top: 70%;
+  left: 20%;
+  animation: float 22s infinite ease-in-out;
+  animation-delay: -5s;
+}
+
+.blob-3 {
+  width: 200px;
+  height: 200px;
+  background: rgba(89, 179, 255, 0.1);
+  top: 20%;
+  right: 20%;
+  animation: float 25s infinite ease-in-out;
+  animation-delay: -10s;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
 }
