@@ -1,118 +1,178 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Sparkles,
-    Settings,
-    ChevronRight,
-    X,
-    Bell,
-    TrendingUp,
-    HandHeart,
-    Droplets,
-    Pencil,
-    Volume2,
-    CheckCircle2
+    Sparkles, Settings, ChevronRight, X, Bell, TrendingUp,
+    HandHeart, Droplets, Pencil, Volume2, CheckCircle2, Circle, Check
 } from 'lucide-react';
+import clsx from 'clsx';
+import confetti from 'canvas-confetti';
+
+// --- Constants (SharedConstants) ---
+const MIN_ACTION_SECONDS = 90;
+const SEG1_END = Math.max(10, Math.floor(MIN_ACTION_SECONDS / 3)); // 30
+const SEG2_END = Math.max(SEG1_END + 10, Math.floor((MIN_ACTION_SECONDS * 2) / 3)); // 60
 
 // --- Types ---
-type View = 'stage' | 'sos' | 'setup' | 'settings' | 'review';
-type SOSStep = 'checkin1' | 'checkin2' | 'moduleSelect' | 'moduleRun' | 'landing' | 'result';
-type SOSModule = 'breath' | 'doodle' | 'listen';
+type ViewMode = 'stage' | 'sos' | 'setup' | 'settings' | 'review' | 'diagnosis' | 'notificationHelper';
+type SOSMode = 'intercepted' | 'selfInitiated';
+type SOSStep = 'checkIn1' | 'checkIn2' | 'moduleSelect' | 'moduleRun' | 'landing' | 'result' | 'delay' | 'proceedInfo';
+type ModuleType = 'breathLight' | 'doodle' | 'listen';
 
-// --- Main App Component ---
+// --- App Component ---
 export default function App() {
-    const [view, setView] = useState<View>('stage');
-    const [monsterState, setMonsterState] = useState({ level: 3, xp: 45, items: 12 });
-    const [guardActive, setGuardActive] = useState(true);
+    const [view, setView] = useState<ViewMode>('stage');
+    const [sosMode, setSosMode] = useState<SOSMode>('selfInitiated');
+
+    // Mock State (AppModel)
+    const [configEnabled, setConfigEnabled] = useState(true);
+    const [minimalMode, setMinimalMode] = useState(false);
+    const [monster3D, setMonster3D] = useState(false);
+
+    // Navigation handlers
+    const goSOS = (mode: SOSMode) => {
+        setSosMode(mode);
+        setView('sos');
+    };
 
     return (
-        <div className="bg-fluid">
+        <>
+            <ZKFXBackground activeGuard={configEnabled} />
             <div className="app-container">
                 <AnimatePresence mode="wait">
                     {view === 'stage' && (
-                        <StageView
-                            onNavigate={setView}
-                            guardActive={guardActive}
-                            monsterState={monsterState}
+                        <MonsterStageView
+                            key="stage"
+                            configEnabled={configEnabled}
+                            minimalMode={minimalMode}
+                            monster3D={monster3D}
+                            onOpenSettings={() => setView('settings')}
+                            onOpenSetup={() => setView('setup')}
+                            onOpenReview={() => setView('review')}
+                            onStartSOS={goSOS}
                         />
                     )}
                     {view === 'sos' && (
-                        <SOSFlowView onExit={() => setView('stage')} />
+                        <SOSFlowView
+                            key="sos"
+                            mode={sosMode}
+                            minimalMode={minimalMode}
+                            monster3D={monster3D}
+                            onExit={() => setView('stage')}
+                        />
                     )}
-                    {view === 'setup' && (
-                        <SetupView onExit={() => setView('stage')} />
-                    )}
+                    {view === 'setup' && <SetupView key="setup" onExit={() => setView('stage')} />}
                     {view === 'settings' && (
-                        <SettingsView onExit={() => setView('stage')} />
+                        <SettingsView
+                            key="settings"
+                            minimalMode={minimalMode} setMinimalMode={setMinimalMode}
+                            monster3D={monster3D} setMonster3D={setMonster3D}
+                            onExit={() => setView('stage')}
+                        />
                     )}
-                    {view === 'review' && (
-                        <ReviewView onExit={() => setView('stage')} />
-                    )}
+                    {view === 'review' && <ReviewView key="review" onExit={() => setView('stage')} />}
                 </AnimatePresence>
+            </div>
+        </>
+    );
+}
+
+// --- Components ---
+
+function ZKFXBackground({ activeGuard }: { activeGuard: boolean }) {
+    // CSS handles the gradient. We add the fluid blobs.
+    return (
+        <div className="zkfx-bg">
+            <div className="fluid-canvas">
+                <div className="fluid-blob blob-1" style={{ animationDuration: activeGuard ? '10s' : '18s' }} />
+                <div className="fluid-blob blob-2" style={{ animationDuration: activeGuard ? '12s' : '22s' }} />
+                <div className="fluid-blob blob-3" style={{ animationDuration: activeGuard ? '14s' : '25s' }} />
             </div>
         </div>
     );
 }
 
-// --- Sub-Views ---
+function MonsterStageView({
+    configEnabled, minimalMode, monster3D,
+    onOpenSettings, onOpenSetup, onOpenReview, onStartSOS
+}: any) {
 
-function StageView({ onNavigate, guardActive, monsterState }: any) {
+    // Logic from MonsterDialogService
+    const [bubbleText, setBubbleText] = useState("");
+    useEffect(() => {
+        const hour = new Date().getHours();
+        if (!configEnabled) {
+            setBubbleText("我睡着了。需要守护时叫醒我。");
+        } else if (hour >= 23 || hour < 5) {
+            setBubbleText("全世界都睡了。\n把手机放下，我们也是。");
+        } else if (hour >= 6 && hour < 9) {
+            setBubbleText("早安。\n今天也要保护好注意力。");
+        } else {
+            setBubbleText("我在这里守着。\n你去忙重要的事情。");
+        }
+    }, [configEnabled]);
+
     return (
         <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col h-full"
-            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="flex flex-col h-full overflow-hidden relative"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
             {/* Top Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-                <button className="glass-pill" onClick={() => onNavigate('settings')}>
-                    <div style={{
-                        width: 8, height: 8, borderRadius: '50%',
-                        backgroundColor: guardActive ? 'var(--success)' : 'var(--text-tertiary)'
-                    }} />
-                    {guardActive ? '守护生效中' : '暂停守护'}
-                    <ChevronRight size={12} opacity={0.5} />
+            <div className="flex justify-between items-center px-5 pt-4 z-10">
+                <button className="glass-pill text-white" style={{ height: 32, paddingRight: 8 }}>
+                    <div className={clsx("w-2 h-2 rounded-full mr-2", configEnabled ? "bg-[#34C759]" : "bg-white/20")} />
+                    <span className="opacity-90">{configEnabled ? "守护生效中" : "守护暂停"}</span>
+                    <ChevronRight size={14} className="opacity-50 ml-1" />
                 </button>
-                <button
-                    onClick={() => onNavigate('settings')}
-                    style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--glass-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                    <Settings size={20} color="var(--text-tertiary)" />
+                <button onClick={onOpenSettings} className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50">
+                    <Settings size={18} fill="currentColor" />
                 </button>
             </div>
 
-            {/* Monster Stage */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <div className="monster-breath" style={{ position: 'relative' }}>
-                    <div style={{
-                        position: 'absolute', top: -80, left: '50%', transform: 'translateX(-50%)',
-                        minWidth: 140, textAlign: 'center'
-                    }}>
-                        <div className="glass-card" style={{ padding: '12px 18px', borderRadius: 20, fontSize: 14, fontWeight: 600 }}>
-                            点开外卖前，<br />先见见我吧
-                        </div>
-                    </div>
-                    <img
-                        src="/monster.png"
-                        alt="Monster"
-                        style={{ width: 280, filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.5))' }}
+            {/* Monster Area */}
+            <div className="flex-1 flex flex-col items-center justify-center relative z-0">
+                <div className="relative flex flex-col items-center">
+                    {/* Bubble */}
+                    {!minimalMode && (
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                            className="mb-[-10px] z-10 glass-card px-4 py-3 min-w-[180px] max-w-[280px]"
+                            style={{ borderRadius: 20, background: 'rgba(255,255,255,0.1)' }}
+                        >
+                            <div className="text-[13.5px] font-semibold text-white/90 text-center whitespace-pre-wrap leading-relaxed">
+                                {bubbleText}
+                            </div>
+                            {/* Triangle tail */}
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-[-6px] w-3 h-3 bg-white/10 border-b border-r border-white/10 rotate-45 backdrop-blur-md"></div>
+                        </motion.div>
+                    )}
+
+                    {/* Monster Asset */}
+                    <motion.img
+                        key={minimalMode ? 'minimal' : 'full'}
+                        src="/Monster_Happy.png"
+                        className="object-contain filter drop-shadow-2xl"
+                        style={{ width: minimalMode ? '56vw' : '70vw', maxWidth: 320 }}
+                        animate={{
+                            y: [0, -10, 0],
+                            scale: [1, 1.02, 1]
+                        }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
                     />
                 </div>
             </div>
 
             {/* Bottom Action Card */}
-            <div className="glass-card" style={{ padding: 20, marginBottom: 10 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <button className="btn-primary" onClick={() => onNavigate('sos')}>
-                        <Sparkles size={20} />
-                        我现在想吃 (先 90 秒)
+            <div className="px-5 pb-6 z-10">
+                <div className="glass-card flex flex-col gap-3">
+                    <button className="btn-primary" onClick={() => onStartSOS('selfInitiated')}>
+                        <Sparkles size={18} fill="currentColor" className="mr-2" />
+                        我现在想吃（先 90 秒）
                     </button>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                        <button className="btn-secondary" onClick={() => onNavigate('setup')}>守护设置</button>
-                        <button className="btn-secondary" onClick={() => onNavigate('review')}>
-                            <TrendingUp size={18} style={{ marginRight: 6 }} />
+                    <div className="flex gap-3">
+                        <button className="btn-secondary" onClick={onOpenSetup}>守护设置</button>
+                        <button className="btn-secondary" onClick={onOpenReview}>
+                            <TrendingUp size={16} className="mr-2 opacity-50" />
                             本周趋势
                         </button>
                     </div>
@@ -122,189 +182,317 @@ function StageView({ onNavigate, guardActive, monsterState }: any) {
     );
 }
 
-function SOSFlowView({ onExit }: any) {
-    const [step, setStep] = useState<SOSStep>('checkin1');
-    const [progress, setProgress] = useState(0);
+function SOSFlowView({ mode, minimalMode, onExit }: any) {
+    const [step, setStep] = useState<SOSStep>('checkIn1');
+    const [elapsed, setElapsed] = useState(0);
+    const [bubbleText, setBubbleText] = useState("发生什么了？");
+    const [monsterImg, setMonsterImg] = useState("Monster_Concerned.png");
+    // Choices state
+    const [checkIn1, setCheckIn1] = useState<string | null>(null);
+    const [module, setModule] = useState<ModuleType | null>(null);
 
+    // Timer
     useEffect(() => {
         const timer = setInterval(() => {
-            setProgress(p => Math.min(100, p + 0.2));
-        }, 100);
+            setElapsed(e => {
+                if (e >= MIN_ACTION_SECONDS) return e;
+                return e + 1;
+            });
+        }, 1000);
         return () => clearInterval(timer);
     }, []);
 
+    // State Machine logic from SOSFlowView.swift: tick()
+    useEffect(() => {
+        if (elapsed === SEG1_END && (step === 'checkIn1' || step === 'checkIn2')) {
+            setStep('moduleSelect');
+            setBubbleText("我们一起做点别的吧");
+            setMonsterImg("Monster_Breathing.png");
+        } else if (elapsed === SEG2_END && (step === 'moduleSelect' || step === 'moduleRun')) {
+            setStep('landing');
+            setBubbleText(`快 ${MIN_ACTION_SECONDS} 秒了。\n你现在感觉怎么样？`);
+            setMonsterImg("Monster_Concerned.png");
+        } else if (elapsed >= MIN_ACTION_SECONDS && step !== 'result' && step !== 'delay' && step !== 'proceedInfo') {
+            setStep('result');
+            setBubbleText("你做到了。");
+            setMonsterImg("Monster_Happy.png");
+            triggerConfetti();
+        }
+    }, [elapsed, step]);
+
+    const progress = Math.min(1, elapsed / MIN_ACTION_SECONDS);
+
+    // Handlers
+    const handleCheckIn1 = (choice: string, reply: string) => {
+        setCheckIn1(choice);
+        setBubbleText(reply);
+        // Auto advance
+        setTimeout(() => {
+            setStep('checkIn2');
+            setBubbleText("现在最想做什么？");
+        }, 1200);
+    };
+
+    const handleModuleSelect = (m: ModuleType, reply: string) => {
+        setModule(m);
+        setBubbleText(reply);
+        setMonsterImg("Monster_Breathing.png");
+        setTimeout(() => setStep('moduleRun'), 500);
+    };
+
     return (
         <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="flex flex-col h-full"
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'var(--bg-deep)', padding: 20, zIndex: 100 }}
+            initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed inset-0 bg-black z-50 flex flex-col"
         >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button onClick={onExit} style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <X size={20} />
+            {/* Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1A0D33] to-black" />
+
+            {/* Top Bar */}
+            <div className="relative z-10 flex justify-between items-center px-5 pt-5">
+                <button onClick={onExit} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+                    <X size={16} className="text-white/80" />
                 </button>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-tertiary)' }}>先接住情绪</div>
-                <div style={{ width: 80, height: 32, borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${progress}%`, background: 'var(--brand)', opacity: 0.3 }} />
-                    <div style={{ position: 'absolute', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>
-                        {Math.floor(progress)}%
+                <div className="text-[13px] font-semibold text-white/50">
+                    {step === 'moduleRun' ? '我们做点别的' : step === 'result' ? '现在决定' : '先接住一下'}
+                </div>
+                {/* Wave Progress Port */}
+                <div className="w-[86px] h-[32px] rounded-full bg-white/5 border border-white/10 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[#59B3FF]/20" style={{ width: `${progress * 100}%` }}></div>
+                    <div className="absolute inset-0 flex items-center justify-center gap-1.5">
+                        {[0, 1, 2].map(i => (
+                            <div key={i} className={clsx("w-1 h-1 rounded-full", (i <= (elapsed < SEG1_END ? 0 : elapsed < SEG2_END ? 1 : 2)) ? "bg-white" : "bg-white/30")} />
+                        ))}
                     </div>
                 </div>
             </div>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <img
-                    src="/monster.png"
-                    alt="Monster"
-                    style={{ width: 220, opacity: 0.8 }}
-                />
-                <div style={{ marginTop: 20, textAlign: 'center' }}>
-                    {step === 'checkin1' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <h2 style={{ fontSize: 24, marginBottom: 20 }}>发生什么了？</h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 280 }}>
-                                {['今天很糟糕', '压力太大了', '说不上来，很难受'].map(item => (
-                                    <button key={item} onClick={() => setStep('checkin2')} className="btn-secondary" style={{ background: 'rgba(255,255,255,0.08)' }}>{item}</button>
-                                ))}
-                            </div>
-                        </motion.div>
+            {/* Stage Content */}
+            <div className="flex-1 relative z-0 flex items-center justify-center">
+                {/* Monster Layer */}
+                <div className="relative flex flex-col items-center">
+                    {!minimalMode && (
+                        <div className="mb-[-10px] z-10 glass-card px-4 py-3 max-w-[280px]">
+                            <p className="text-[14px] font-semibold text-white/90 text-center whitespace-pre-wrap">{bubbleText}</p>
+                        </div>
                     )}
-                    {step === 'checkin2' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <h2 style={{ fontSize: 24, marginBottom: 20 }}>现在最想？</h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 280 }}>
-                                {['吃点东西', '安静待一会儿', '想哭'].map(item => (
-                                    <button key={item} onClick={() => setStep('moduleSelect')} className="btn-secondary" style={{ background: 'rgba(255,255,255,0.08)' }}>{item}</button>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
-                    {step === 'moduleSelect' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <h2 style={{ fontSize: 24, marginBottom: 10 }}>我们做点别的</h2>
-                            <p style={{ color: 'var(--text-tertiary)', fontSize: 14, marginBottom: 30 }}>跟随节奏，深呼吸 30 秒</p>
-                            <button className="btn-primary" onClick={() => setStep('result')}>
-                                <Droplets size={20} />
-                                开始呼吸练习
+                    <motion.img
+                        key={monsterImg}
+                        src={`/${monsterImg}`}
+                        initial={{ opacity: 0.8 }} animate={{ opacity: 1 }}
+                        className="w-[70vw] max-w-[280px] drop-shadow-2xl"
+                        style={{
+                            // Breathing animation if module is breathLight
+                            animation: (step === 'moduleRun' && module === 'breathLight') ? 'breath 4s infinite ease-in-out' : 'float 6s infinite ease-in-out'
+                        }}
+                    />
+                </div>
+
+                {/* Overlay Module */}
+                {step === 'moduleRun' && module === 'breathLight' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-sm">
+                        <BreathLightOverlay />
+                    </div>
+                )}
+            </div>
+
+            {/* Bottom Card */}
+            <div className="p-5 pb-8 relative z-20">
+                <div className="glass-card flex flex-col gap-3 min-h-[160px] justify-center">
+                    {step === 'checkIn1' && (
+                        <>
+                            <div className="text-white font-bold px-1">发生什么了？</div>
+                            <button className="option-row" onClick={() => handleCheckIn1('bad', "嗯…我懂的。")}>
+                                <div className="w-4 h-4 rounded-full border border-white/30" />
+                                <span className="font-rounded font-bold text-[15px]">今天很糟糕</span>
                             </button>
-                        </motion.div>
+                            <button className="option-row" onClick={() => handleCheckIn1('stress', "辛苦了。先慢一点。")}>
+                                <div className="w-4 h-4 rounded-full border border-white/30" />
+                                <span className="font-rounded font-bold text-[15px]">压力太大了</span>
+                            </button>
+                        </>
                     )}
+
+                    {step === 'checkIn2' && (
+                        <>
+                            <div className="text-white font-bold px-1">现在最想做什么？</div>
+                            <button className="option-row" onClick={() => setTimeout(() => setStep('moduleSelect'), 500)}>
+                                <div className="w-4 h-4 rounded-full border border-white/30" />
+                                <span className="font-rounded font-bold text-[15px]">吃点东西</span>
+                            </button>
+                            <button className="option-row" onClick={() => setTimeout(() => setStep('moduleSelect'), 500)}>
+                                <div className="w-4 h-4 rounded-full border border-white/30" />
+                                <span className="font-rounded font-bold text-[15px]">安静待一会儿</span>
+                            </button>
+                        </>
+                    )}
+
+                    {(step === 'moduleSelect') && (
+                        <>
+                            <div className="text-white font-bold px-1">我们做点别的</div>
+                            <button className="module-row" onClick={() => handleModuleSelect('breathLight', "跟着光，慢慢呼吸。")}>
+                                <Circle className="text-white/50 w-6" />
+                                <div className="flex-1">
+                                    <div className="font-bold text-[15px]">呼吸灯</div>
+                                    <div className="text-[12px] text-white/50">跟着光慢慢呼吸</div>
+                                </div>
+                                <ChevronRight size={14} className="text-white/30" />
+                            </button>
+                            <button className="module-row" onClick={() => handleModuleSelect('doodle', "随便画点什么。")}>
+                                <Pencil className="text-white/50 w-6" />
+                                <div className="flex-1">
+                                    <div className="font-bold text-[15px]">涂一涂</div>
+                                    <div className="text-[12px] text-white/50">随便画点什么</div>
+                                </div>
+                                <ChevronRight size={14} className="text-white/30" />
+                            </button>
+                        </>
+                    )}
+
+                    {step === 'moduleRun' && (
+                        <div className="flex gap-2">
+                            <button className="btn-secondary" onClick={() => setModule('breathLight')}>呼吸灯</button>
+                            <button className="btn-secondary" onClick={() => setModule('doodle')}>涂一涂</button>
+                            <button className="btn-secondary" onClick={() => setModule('listen')}>听一听</button>
+                        </div>
+                    )}
+
+                    {step === 'landing' && (
+                        <>
+                            <div className="text-white font-bold px-1">快结束了...</div>
+                            <div className="text-white/50 text-sm px-1">等待进度条走完...</div>
+                        </>
+                    )}
+
                     {step === 'result' && (
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
-                            <h2 style={{ fontSize: 28, marginBottom: 10 }}>90 秒完成了</h2>
-                            <p style={{ color: 'var(--text-tertiary)', marginBottom: 40 }}>你现在感觉怎么样？</p>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 300 }}>
-                                <button onClick={onExit} className="btn-primary">回到舞台</button>
-                                <button onClick={onExit} className="btn-secondary">延迟 2 分钟决断</button>
-                            </div>
-                        </motion.div>
+                        <>
+                            <button className="btn-primary" onClick={onExit}>回到舞台</button>
+                            <button className="btn-secondary" onClick={onExit}>延迟 2 分钟 (完成后算一次)</button>
+                        </>
                     )}
                 </div>
             </div>
+
+            <style>{`
+         @keyframes breath {
+           0%, 100% { transform: scale(1); }
+           50% { transform: scale(1.05); }
+         }
+       `}</style>
         </motion.div>
     );
+}
+
+// --- Helper Components ---
+
+function BreathLightOverlay() {
+    return (
+        <motion.div
+            animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="w-[240px] h-[240px] rounded-full bg-[#59B3FF] blur-[60px] opacity-60"
+        />
+    )
+}
+
+function SettingsView({ onExit, minimalMode, setMinimalMode, monster3D, setMonster3D }: any) {
+    return (
+        <motion.div
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed inset-0 bg-[#08040a] z-50 flex flex-col"
+        >
+            <div className="flex items-center px-4 py-3 border-b border-white/5">
+                <button onClick={onExit} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10"><X size={16} /></button>
+                <span className="flex-1 text-center font-semibold text-white/50 text-[13px]">设置</span>
+                <div className="w-8" />
+            </div>
+
+            <div className="p-5 flex flex-col gap-4">
+                {/* Toggle Card */}
+                <div className="glass-card flex flex-col gap-4">
+                    <span className="font-bold text-[16px]">显示</span>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <div className="font-semibold text-[14px]">极简模式</div>
+                            <div className="text-[12px] text-white/50">隐藏怪兽动画/对话</div>
+                        </div>
+                        <Toggle checked={minimalMode} onChange={setMinimalMode} />
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <div className="font-semibold text-[14px]">3D 怪兽 (实验)</div>
+                            <div className="text-[12px] text-white/50">开启后使用 USDZ 渲染 (Simulation)</div>
+                        </div>
+                        <Toggle checked={monster3D} onChange={setMonster3D} />
+                    </div>
+                </div>
+
+                {/* Growth Card */}
+                <div className="glass-card">
+                    <span className="font-bold text-[16px] block mb-3">怪兽成长</span>
+                    <div className="flex items-center gap-4">
+                        <img src="/Monster_Happy.png" className="w-[80px] h-[80px]" />
+                        <div className="flex-1">
+                            <div className="font-bold text-[15px]">Lv. 5</div>
+                            <div className="text-[13px] text-white/85">🍰 24</div>
+                            <div className="text-[12px] text-white/50">经验: 78%</div>
+                        </div>
+                        <div className="w-[80px] h-[80px] relative flex items-center justify-center">
+                            <svg className="w-full h-full -rotate-90">
+                                <circle cx="40" cy="40" r="32" stroke="rgba(255,255,255,0.1)" strokeWidth="6" fill="none" />
+                                <circle cx="40" cy="40" r="32" stroke="#59B3FF" strokeWidth="6" fill="none" strokeDasharray="200" strokeDashoffset={200 * (1 - 0.78)} strokeLinecap="round" />
+                            </svg>
+                            <span className="absolute font-bold text-sm">78%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    )
+}
+
+function Toggle({ checked, onChange }: any) {
+    return (
+        <button
+            onClick={() => onChange(!checked)}
+            className={clsx(
+                "w-[51px] h-[31px] rounded-full p-[2px] transition-colors duration-200",
+                checked ? "bg-[#34C759]" : "bg-white/10"
+            )}
+        >
+            <div className={clsx(
+                "w-[27px] h-[27px] rounded-full bg-white shadow-sm transition-transform duration-200",
+                checked ? "translate-x-[20px]" : "translate-x-0"
+            )} />
+        </button>
+    )
 }
 
 function SetupView({ onExit }: any) {
     return (
-        <motion.div
-            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-            className="flex flex-col h-full"
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'var(--bg-deep)', padding: 20, zIndex: 100 }}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
-                <button onClick={onExit}><X /></button>
-                <span style={{ fontSize: 14 }}>配置守护</span>
-                <div style={{ width: 24 }} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div className="glass-card" style={{ padding: 20 }}>
-                    <h3 style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}><HandHeart size={20} color="var(--brand)" /> 守护范围</h3>
-                    <p style={{ color: 'var(--text-tertiary)', fontSize: 13, marginBottom: 20 }}>选择需要“暂停”的外卖或零食 App</p>
-                    <button className="btn-secondary">已选 3 个 App</button>
-                </div>
-
-                <div className="glass-card" style={{ padding: 20 }}>
-                    <h3 style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}><Bell size={20} color="var(--brand)" /> 提醒回流</h3>
-                    <p style={{ color: 'var(--text-tertiary)', fontSize: 13, marginBottom: 20 }}>拦截时发送 Time Sensitive 通知</p>
-                    <button className="btn-secondary" style={{ background: 'var(--brand)', color: 'white' }}>已开启通知</button>
-                </div>
-
-                <button className="btn-primary" style={{ marginTop: 'auto' }} onClick={onExit}>保存并启用</button>
-            </div>
-        </motion.div>
-    );
-}
-
-function SettingsView({ onExit }: any) {
-    return (
-        <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="flex flex-col h-full overflow-y-auto"
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'var(--bg-deep)', padding: 20, zIndex: 100 }}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
-                <button onClick={onExit}><X /></button>
-                <span style={{ fontSize: 14 }}>设置</span>
-                <div style={{ width: 24 }} />
-            </div>
-
-            <div className="glass-card" style={{ padding: 20, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 15 }}>
-                <img src="/monster.png" style={{ width: 60 }} />
-                <div>
-                    <div style={{ fontWeight: 700, fontSize: 18 }}>Lv. 4</div>
-                    <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>🍰 累积完成 18 次暂停</div>
-                </div>
-                <div style={{ marginLeft: 'auto', width: 44, height: 44, borderRadius: '50%', border: '4px solid var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800 }}>
-                    65%
-                </div>
-            </div>
-        </motion.div>
+        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center text-white/50">
+            (Setup View Placeholder - Same as iOS)
+            <br /> <button className="btn-secondary w-auto px-4 mt-4" onClick={onExit}>Close</button>
+        </div>
     )
 }
 
 function ReviewView({ onExit }: any) {
     return (
-        <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="flex flex-col h-full"
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'var(--bg-deep)', padding: 20, zIndex: 100 }}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
-                <button onClick={onExit}><X /></button>
-                <span style={{ fontSize: 14 }}>本周趋势</span>
-                <div style={{ width: 24 }} />
-            </div>
-
-            <div className="glass-card" style={{ padding: 20, marginBottom: 20 }}>
-                <h3 style={{ marginBottom: 20 }}>回头率分布</h3>
-                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: 120, padding: '0 10px' }}>
-                    {[60, 85, 40, 95, 70, 30, 90].map((h, i) => (
-                        <div
-                            key={i}
-                            style={{
-                                width: 24,
-                                height: `${h}%`,
-                                background: h > 80 ? 'var(--brand)' : 'var(--glass-stroke)',
-                                borderRadius: '6px 6px 0 0'
-                            }}
-                        />
-                    ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, color: 'var(--text-tertiary)', fontSize: 10 }}>
-                    <span>Mon</span>
-                    <span>Tue</span>
-                    <span>Wed</span>
-                    <span>Thu</span>
-                    <span>Fri</span>
-                    <span>Sat</span>
-                    <span>Sun</span>
-                </div>
-            </div>
-        </motion.div>
+        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center text-white/50">
+            (Review View Placeholder - Same as iOS)
+            <br /> <button className="btn-secondary w-auto px-4 mt-4" onClick={onExit}>Close</button>
+        </div>
     )
+}
+
+function triggerConfetti() {
+    confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#59B3FF', '#ffffff']
+    });
 }

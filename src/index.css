@@ -1,17 +1,33 @@
 :root {
-  --bg-deep: #08040a;
-  --bg-purple: #1a0d33;
-  --brand: #59b3ff;
+  /* AppColors from DesignSystem.swift */
+  --bg-top: rgb(26, 13, 51);
+  /* #1A0D33 */
+  --bg-mid: rgb(13, 5, 26);
+  /* #0D051A */
+  --bg-bot: #000000;
+
+  --brand: rgb(89, 179, 255);
+  /* #59B3FF */
   --brand-glow: rgba(89, 179, 255, 0.4);
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --danger: #ef4444;
+
+  --success: #34C759;
+  --warning: #FFCC00;
+  --danger: #FF3B30;
+
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.85);
+  /* 0.86 in swift but 0.85 ok */
   --text-tertiary: rgba(255, 255, 255, 0.5);
+
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-stroke: rgba(255, 255, 255, 0.15);
+  /* DesignSystem.swift: 0.15 */
   --glass-blur: blur(20px);
+
+  --card-radius: 24px;
+  /* GlassCard cornerRadius: 24 */
+  --btn-radius: 16px;
+  /* ZKFXPrimaryButtonStyle cornerRadius: 16 */
 }
 
 * {
@@ -19,112 +35,243 @@
   padding: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "Inter", sans-serif;
-  background-color: var(--bg-deep);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro", "Inter", sans-serif;
+  background-color: var(--bg-bot);
   color: var(--text-primary);
-  overflow: hidden; /* Mobile-first container feel */
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
 }
 
-/* Glassmorphism Classes */
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-stroke);
-  border-radius: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+/* Background Gradient from DesignSystem.swift */
+/* ZKFXBackground logic: LinearGradient + FluidCanvas */
+.zkfx-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  background: linear-gradient(to bottom right, var(--bg-top), var(--bg-mid), var(--bg-bot));
 }
 
-.glass-pill {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 6px 14px;
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Animations */
-@keyframes fluidMove {
-  0% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(10%, -5%) scale(1.1); }
-  66% { transform: translate(-5%, 8%) scale(0.9); }
-  100% { transform: translate(0, 0) scale(1); }
-}
-
-@keyframes monsterBreath {
-  0% { transform: scale(1) translateY(0); }
-  50% { transform: scale(1.03) translateY(-10px); }
-  100% { transform: scale(1) translateY(0); }
-}
-
-.monster-breath {
-  animation: monsterBreath 4s ease-in-out infinite;
-}
-
-.bg-fluid {
-  position: fixed;
+/* Canvas Fluid Blob Animation */
+/* Mocking FluidCanvas.swift with CSS animations for blobs */
+.fluid-canvas {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   z-index: -1;
-  background: radial-gradient(circle at 20% 30%, var(--bg-purple) 0%, transparent 40%),
-              radial-gradient(circle at 80% 70%, #120a2e 0%, transparent 40%),
-              var(--bg-deep);
+  opacity: 0.6;
+  filter: blur(60px);
+  overflow: hidden;
+  pointer-events: none;
 }
 
-/* Layout Utilities */
-.app-container {
-  max-width: 480px;
-  margin: 0 auto;
-  height: 100vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
+.fluid-blob {
+  position: absolute;
+  border-radius: 50%;
+  animation: float 20s infinite ease-in-out;
 }
 
-button {
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
-  font-family: inherit;
+/* Blob 1: Blue/Brand */
+.blob-1 {
+  width: 300px;
+  height: 300px;
+  background: rgba(89, 179, 255, 0.25);
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-duration: 18s;
 }
 
-button:active {
-  transform: scale(0.96);
-  opacity: 0.8;
+/* Blob 2: Purple/Secondary */
+.blob-2 {
+  width: 360px;
+  height: 360px;
+  background: rgba(81, 51, 153, 0.15);
+  /* rgb(0.32, 0.20, 0.60) */
+  top: 70%;
+  left: 20%;
+  animation-duration: 22s;
+  animation-delay: -5s;
 }
 
+/* Blob 3: Accent/Glow */
+.blob-3 {
+  width: 200px;
+  height: 200px;
+  background: rgba(89, 179, 255, 0.1);
+  /* brandGlow opacity 0.1 */
+  top: 20%;
+  right: 20%;
+  animation-duration: 25s;
+  animation-delay: -10s;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+/* --- Components --- */
+
+/* GlassCard.swift */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  /* .ultraThinMaterial approx */
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--card-radius);
+  border: 1px solid var(--glass-stroke);
+  /* shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10) */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  padding: 14px;
+  /* ZKFXCard padding */
+}
+
+/* ZKFXPrimaryButtonStyle */
 .btn-primary {
+  width: 100%;
+  height: 54px;
   background: var(--brand);
   color: white;
-  height: 54px;
-  border-radius: 16px;
-  font-weight: 700;
+  border-radius: var(--btn-radius);
   font-size: 16px;
-  width: 100%;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  box-shadow: 0 4px 15px var(--brand-glow);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* stroke */
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
 }
 
+.btn-primary:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+/* ZKFXSecondaryButtonStyle */
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary);
-  height: 50px;
-  border-radius: 16px;
-  font-weight: 600;
-  font-size: 14px;
   width: 100%;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+  border-radius: var(--btn-radius);
+  font-size: 14px;
+  /* swift says 15 in places, but buttonStyle says default? label font is often 14 semibold */
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-secondary:active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(0.98);
+}
+
+/* ZKFXPill */
+.zkfx-pill {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pill-neutral {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.pill-good {
+  color: var(--success);
+  background: rgba(52, 199, 89, 0.14);
+  border-color: rgba(52, 199, 89, 0.25);
+}
+
+.pill-warn {
+  color: var(--warning);
+  background: rgba(255, 204, 0, 0.14);
+  border-color: rgba(255, 204, 0, 0.25);
+}
+
+.pill-bad {
+  color: var(--danger);
+  background: rgba(255, 59, 48, 0.14);
+  border-color: rgba(255, 59, 48, 0.25);
+}
+
+/* Checkbox Row (OptionRow) */
+.option-row {
+  height: 54px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.option-row.selected {
+  background: rgba(89, 179, 255, 0.16);
+  border-color: rgba(89, 179, 255, 0.55);
+}
+
+/* Module Row */
+.module-row {
+  height: 58px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.module-row.selected {
+  background: rgba(89, 179, 255, 0.14);
+  border-color: rgba(89, 179, 255, 0.55);
+}
+
+/* Typography map to Swift */
+.font-rounded {
+  font-family: "SF Pro Rounded", system-ui, sans-serif;
+}
+
+/* Utilities */
+.safe-area-bottom {
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
