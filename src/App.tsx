@@ -7,11 +7,10 @@ import DemoVideos from './screens/DemoVideos';
 import HomeScreen from './screens/HomeScreen';
 import ShieldOverlay from './screens/ShieldOverlay';
 import SimulatedApp from './screens/SimulatedApp';
-import WeiweiNative from './screens/WeiweiNative';
+import WeiweiApp from './screens/WeiweiApp';
 import { WEIWEI_WZX_FRAMES_BY_ID } from './figma/weiwei-wzx';
 import { getWeiweiWzxFrameSvg } from './figma/weiwei-wzx-svgs';
-import { WEIWEI_FRAMES, isFrameInCategory, nextFrameId } from './figma/flow';
-import { WEIWEI_WZX_LOGO_SVG } from './figma/weiwei-wzx';
+import { WEIWEI_FRAMES, nextFrameId } from './figma/flow';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
@@ -27,32 +26,10 @@ const App: React.FC = () => {
     weiweiNavKind: 'reset',
   });
 
-  const stateRef = useRef(state);
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
-
   const navigateTo = (view: AppView) => setState((prev) => ({ ...prev, currentView: view }));
   const updateState = (updates: Partial<AppState>) => setState((prev) => ({ ...prev, ...updates }));
 
   const lastNavAtRef = useRef(0);
-  const prefetchedUrlsRef = useRef<Set<string>>(new Set());
-
-  const prefetchUrl = (url: string) => {
-    if (!url) return;
-    if (prefetchedUrlsRef.current.has(url)) return;
-    prefetchedUrlsRef.current.add(url);
-    const img = new Image();
-    img.decoding = 'async';
-    img.src = url;
-  };
-
-  const prefetchFrame = (frameId: string) => {
-    const f = WEIWEI_WZX_FRAMES_BY_ID[frameId];
-    const svg = getWeiweiWzxFrameSvg(frameId);
-    if (svg) prefetchUrl(svg);
-    else if (f?.image2xPng) prefetchUrl(f.image2xPng);
-  };
 
   const openWeiweiFrame = (
     frameId: string,
@@ -61,7 +38,6 @@ const App: React.FC = () => {
     const now = performance.now();
     if (now - lastNavAtRef.current < 90) return;
     lastNavAtRef.current = now;
-    prefetchFrame(frameId);
     setState((prev) => {
       const nextStack = opts?.resetStack ? [] : [...(prev.weiweiStack ?? [])];
       if (opts?.replace) {
@@ -75,7 +51,7 @@ const App: React.FC = () => {
       const kind = opts?.resetStack ? 'reset' : opts?.replace ? 'replace' : 'push';
       return {
         ...prev,
-        currentView: AppView.WEIWEI_FIGMA,
+        currentView: AppView.WEIWEI_APP,
         weiweiFrameId: frameId,
         weiweiStack: nextStack,
         flowCursor: nextCursor,
@@ -83,69 +59,6 @@ const App: React.FC = () => {
       };
     });
   };
-
-  useEffect(() => {
-    // Warm up key WeiWei frames so first taps feel instant.
-    prefetchFrame(WEIWEI_FRAMES.home[0]);
-    prefetchFrame(WEIWEI_FRAMES.stage[0]);
-    prefetchFrame(WEIWEI_FRAMES.trends[0]);
-    prefetchFrame(WEIWEI_FRAMES.guard[0]);
-  }, []);
-
-  useEffect(() => {
-    // Preload all demo frames in the background to eliminate "tap then wait".
-    const urls: string[] = [];
-    for (const f of Object.values(WEIWEI_WZX_FRAMES_BY_ID)) {
-      const u = getWeiweiWzxFrameSvg(f.id) ?? f.image2xPng;
-      if (u) urls.push(u);
-    }
-    if (WEIWEI_WZX_LOGO_SVG) urls.push(WEIWEI_WZX_LOGO_SVG);
-
-    const queue = urls.filter((u) => !prefetchedUrlsRef.current.has(u));
-    if (queue.length === 0) return;
-
-    let cancelled = false;
-    let active = 0;
-    const maxConcurrent = 4;
-
-    const pump = () => {
-      if (cancelled) return;
-      while (active < maxConcurrent && queue.length > 0) {
-        const url = queue.shift();
-        if (!url) continue;
-        if (prefetchedUrlsRef.current.has(url)) continue;
-        active += 1;
-
-        const img = new Image();
-        img.decoding = 'async';
-        img.onload = img.onerror = () => {
-          active -= 1;
-          pump();
-        };
-        prefetchedUrlsRef.current.add(url);
-        img.src = url;
-      }
-    };
-
-    const start = () => pump();
-
-    if ('requestIdleCallback' in window) {
-      const id = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout?: number }) => number }).requestIdleCallback(
-        start,
-        { timeout: 2000 },
-      );
-      return () => {
-        cancelled = true;
-        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback?.(id);
-      };
-    }
-
-    const t = window.setTimeout(start, 120);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(t);
-    };
-  }, []);
 
   const enterWeiweiAt = (frameId: string, opts?: { advanceCursor?: boolean; cursorStep?: number }) => {
     openWeiweiFrame(frameId, { resetStack: true, advanceCursor: opts?.advanceCursor, cursorStep: opts?.cursorStep });
@@ -157,7 +70,7 @@ const App: React.FC = () => {
       if (stack.length <= 1) return { ...prev, currentView: AppView.OS_HOME };
       stack.pop();
       const frameId = stack[stack.length - 1];
-      return { ...prev, currentView: AppView.WEIWEI_FIGMA, weiweiFrameId: frameId, weiweiStack: stack, weiweiNavKind: 'pop' };
+      return { ...prev, currentView: AppView.WEIWEI_APP, weiweiFrameId: frameId, weiweiStack: stack, weiweiNavKind: 'pop' };
     });
   };
 
@@ -179,64 +92,8 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  useEffect(() => {
-    if (state.currentView !== AppView.WEIWEI_FIGMA) return;
-    if (!state.weiweiFrameId) return;
-    if (!isFrameInCategory(state.weiweiFrameId, 'breathing')) return;
-    const frameId = state.weiweiFrameId;
-    const t = setTimeout(() => {
-      const s = stateRef.current;
-      if (s.currentView !== AppView.WEIWEI_FIGMA) return;
-      if (s.weiweiFrameId !== frameId) return;
-      if (!isFrameInCategory(frameId, 'breathing')) return;
-      const cursor = s.flowCursor ?? 0;
-      const nextCheckin = nextFrameId(WEIWEI_FRAMES.checkin, cursor);
-      openWeiweiFrame(nextCheckin);
-    }, 16_000);
-    return () => clearTimeout(t);
-  }, [state.currentView, state.weiweiFrameId]);
-
-  useEffect(() => {
-    if (state.currentView !== AppView.WEIWEI_FIGMA) return;
-    const frameId = state.weiweiFrameId;
-    if (!frameId) return;
-
-    prefetchFrame(frameId);
-
-    const cursor = state.flowCursor ?? 0;
-    const candidates: string[] = [];
-
-    if (isFrameInCategory(frameId, 'home') || isFrameInCategory(frameId, 'stage')) {
-      candidates.push(WEIWEI_FRAMES.feeling[0], WEIWEI_FRAMES.guard[0], WEIWEI_FRAMES.trends[0]);
-    }
-    if (isFrameInCategory(frameId, 'feeling')) {
-      candidates.push(...WEIWEI_FRAMES.breathing, WEIWEI_FRAMES.guard[0], WEIWEI_FRAMES.trends[0], WEIWEI_FRAMES.home[0]);
-    }
-    if (isFrameInCategory(frameId, 'breathing')) {
-      candidates.push(...WEIWEI_FRAMES.checkin);
-    }
-    if (isFrameInCategory(frameId, 'checkin')) {
-      candidates.push(...WEIWEI_FRAMES.desire);
-    }
-    if (isFrameInCategory(frameId, 'desire')) {
-      candidates.push(...WEIWEI_FRAMES.actions);
-    }
-    if (isFrameInCategory(frameId, 'actions')) {
-      candidates.push(...WEIWEI_FRAMES.breathing, ...WEIWEI_FRAMES.checkin);
-    }
-    if (isFrameInCategory(frameId, 'guard')) {
-      candidates.push(...WEIWEI_FRAMES.guard, WEIWEI_FRAMES.home[0], WEIWEI_FRAMES.trends[0]);
-    }
-
-    // Add a few direct next variants (fast path)
-    candidates.push(
-      nextFrameId(WEIWEI_FRAMES.checkin, cursor),
-      nextFrameId(WEIWEI_FRAMES.desire, cursor),
-      nextFrameId(WEIWEI_FRAMES.actions, cursor),
-    );
-
-    for (const id of candidates) prefetchFrame(id);
-  }, [state.currentView, state.weiweiFrameId, state.flowCursor]);
+  // NOTE: WeiWei main demo uses real components, not frame images.
+  // Keep Figma frame rendering inside the gallery only.
 
   const renderView = () => {
     switch (state.currentView) {
@@ -300,16 +157,19 @@ const App: React.FC = () => {
             onHome={() => navigateTo(AppView.OS_HOME)}
           />
         ) };
-      case AppView.WEIWEI_FIGMA: {
+      case AppView.WEIWEI_APP: {
         const frameId = state.weiweiFrameId ?? WEIWEI_FRAMES.home[0];
         const cursor = state.flowCursor ?? 0;
         const stackLen = (state.weiweiStack ?? []).length;
         return { key: 'WEIWEI', node: (
-          <WeiweiNative
+          <WeiweiApp
             frameId={frameId}
             cursor={cursor}
             stackLen={stackLen}
             navKind={state.weiweiNavKind ?? 'replace'}
+            stats={state.stats}
+            selectedEmotion={state.selectedEmotion}
+            onSetEmotion={(emotion) => updateState({ selectedEmotion: emotion })}
             onExit={() => navigateTo(AppView.OS_HOME)}
             onPop={popWeiweiFrame}
             onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}

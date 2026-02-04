@@ -19,7 +19,15 @@ const WeeklyReview: React.FC<Props> = ({ onRestart, onBack }) => {
   return (
     <div className="flex flex-col h-full w-full bg-background-dark text-white animate-fade-in relative overflow-hidden">
        <header className="sticky top-0 z-50 flex items-center justify-between px-4 pt-6 pb-4 bg-background-dark/80 backdrop-blur-md shrink-0">
-         <button onClick={onBack} className="flex items-center justify-center text-white size-10 rounded-full hover:bg-surface-highlight transition-colors">
+         <button
+           type="button"
+           onPointerDown={(e) => {
+             e.preventDefault();
+             onBack();
+           }}
+           className="flex items-center justify-center text-white size-10 rounded-full hover:bg-surface-highlight transition-colors active:scale-[0.98]"
+           style={{ touchAction: 'manipulation' }}
+         >
            <span className="material-symbols-outlined">arrow_back_ios_new</span>
          </button>
          <h1 className="text-sm font-bold tracking-wide uppercase text-gray-400">Weekly Report</h1>
@@ -117,9 +125,14 @@ const WeeklyReview: React.FC<Props> = ({ onRestart, onBack }) => {
        </main>
 
        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-dark via-background-dark to-transparent pt-12 flex justify-center pointer-events-none">
-          <button 
-            onClick={onRestart}
-            className="w-full bg-primary hover:bg-blue-600 text-white font-bold text-lg py-4 rounded-xl shadow-[0_4px_20px_rgba(23,84,207,0.4)] transition-all pointer-events-auto flex items-center justify-center gap-2"
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onRestart();
+            }}
+            className="w-full bg-primary hover:bg-blue-600 text-white font-bold text-lg py-4 rounded-xl shadow-[0_4px_20px_rgba(23,84,207,0.4)] transition-all pointer-events-auto flex items-center justify-center gap-2 active:scale-[0.98]"
+            style={{ touchAction: 'manipulation' }}
           >
              <span className="material-symbols-outlined">refresh</span>
              开启新的一周

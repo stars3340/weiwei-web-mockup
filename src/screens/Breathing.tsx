@@ -17,10 +17,19 @@ const Breathing: React.FC<Props> = ({ onComplete }) => {
     <div className="h-full w-full bg-[#0a0a0c] text-white flex flex-col items-center justify-center relative animate-fade-in">
        {/* Top Controls */}
        <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-20">
-         <button onClick={onComplete} className="text-white/30 hover:text-white/60 p-2 rounded-full hover:bg-white/5">
+         <button
+           type="button"
+           onPointerDown={(e) => {
+             e.preventDefault();
+             onComplete();
+           }}
+           className="text-white/30 hover:text-white/60 p-2 rounded-full hover:bg-white/5 active:scale-[0.98]"
+           style={{ touchAction: 'manipulation' }}
+           aria-label="Close"
+         >
            <span className="material-symbols-outlined !text-[28px]">expand_more</span>
          </button>
-         <button className="text-white/30 hover:text-white/60 p-2 rounded-full hover:bg-white/5">
+         <button type="button" className="text-white/30 hover:text-white/60 p-2 rounded-full hover:bg-white/5 active:scale-[0.98]" style={{ touchAction: 'manipulation' }}>
            <span className="material-symbols-outlined !text-[24px]">volume_up</span>
          </button>
        </div>

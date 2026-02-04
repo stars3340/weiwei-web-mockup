@@ -25,10 +25,28 @@ const FocusDashboard: React.FC<Props> = ({ stats, onSimulateInterruption, onEndF
            <span className="text-[11px] font-bold tracking-wider text-green-400 uppercase">ACTIVE GUARD</span>
          </div>
          <div className="flex gap-2">
-            <button onClick={onSettings} className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                onSettings?.();
+              }}
+              className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors active:scale-[0.98]"
+              style={{ touchAction: 'manipulation' }}
+              aria-label="Settings"
+            >
               <span className="material-symbols-outlined text-white/60 text-[20px]">settings</span>
             </button>
-            <button onClick={onEndFocus} className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                onEndFocus();
+              }}
+              className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors active:scale-[0.98]"
+              style={{ touchAction: 'manipulation' }}
+              aria-label="End"
+            >
                 <span className="material-symbols-outlined text-white/60 text-[20px]">power_settings_new</span>
             </button>
          </div>
@@ -80,9 +98,14 @@ const FocusDashboard: React.FC<Props> = ({ stats, onSimulateInterruption, onEndF
             </div>
          </div>
 
-         <button 
-           className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-white font-bold text-sm flex items-center justify-center gap-2 group"
-           onClick={onHome}
+         <button
+           type="button"
+           className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-white font-bold text-sm flex items-center justify-center gap-2 group active:scale-[0.98]"
+           onPointerDown={(e) => {
+             e.preventDefault();
+             onHome?.();
+           }}
+           style={{ touchAction: 'manipulation' }}
          >
             <span className="material-symbols-outlined text-gray-400 group-hover:text-white transition-colors">home_app_logo</span>
              回到桌面 (测试拦截)

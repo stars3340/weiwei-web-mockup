@@ -69,8 +69,21 @@ const ActionSuggestion: React.FC<Props> = ({ emotion, onActionSelect, onSurrende
        <div className="absolute top-[-15%] left-[-20%] w-[70%] h-[50%] bg-primary/5 rounded-full blur-[100px] pointer-events-none mix-blend-screen"></div>
        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[40%] bg-accent-warm/5 rounded-full blur-[80px] pointer-events-none mix-blend-screen"></div>
 
-       <div className="flex items-center p-6 justify-center z-10 opacity-60 shrink-0">
+       <div className="flex items-center p-6 justify-between z-10 shrink-0">
+         <button
+           type="button"
+           onPointerDown={(e) => {
+             e.preventDefault();
+             onBack();
+           }}
+           className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/5 text-white/70 hover:text-white transition-colors active:scale-[0.98]"
+           style={{ touchAction: 'manipulation' }}
+           aria-label="Back"
+         >
+           <span className="material-symbols-outlined text-[20px]">close</span>
+         </button>
          <h2 className="text-white text-xs font-bold tracking-[0.15em] uppercase">行动建议</h2>
+         <div className="w-10" />
        </div>
 
        <div className="flex-1 flex flex-col justify-center px-6 relative z-10 pb-8 overflow-y-auto">
@@ -90,8 +103,13 @@ const ActionSuggestion: React.FC<Props> = ({ emotion, onActionSelect, onSurrende
 
          <div className="flex flex-col gap-4 w-full animate-slide-up shrink-0">
            <button 
-             onClick={() => onActionSelect(data.primaryAction.id)}
+             type="button"
+             onPointerDown={(e) => {
+               e.preventDefault();
+               onActionSelect(data.primaryAction.id);
+             }}
              className="group w-full text-left relative overflow-hidden rounded-2xl bg-primary p-0 shadow-lg shadow-primary/25 transition-transform active:scale-[0.98]"
+             style={{ touchAction: 'manipulation' }}
            >
              <div className="absolute right-[-20px] top-[-20px] w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
              <div className="flex items-center justify-between p-5 relative z-10">
@@ -106,14 +124,27 @@ const ActionSuggestion: React.FC<Props> = ({ emotion, onActionSelect, onSurrende
            </button>
 
            <button 
-             onClick={() => onActionSelect(data.secondaryAction.id)}
+             type="button"
+             onPointerDown={(e) => {
+               e.preventDefault();
+               onActionSelect(data.secondaryAction.id);
+             }}
              className="flex w-full cursor-pointer items-center justify-center rounded-xl h-14 px-5 bg-surface-highlight border border-white/5 hover:bg-surface-highlight/80 text-white transition-all active:scale-[0.98]"
+             style={{ touchAction: 'manipulation' }}
            >
              <span className="material-symbols-outlined text-gray-400 mr-2.5 text-[20px]">{data.secondaryAction.icon || 'timer'}</span>
              <span className="text-base font-bold tracking-[0.015em]">{data.secondaryAction.label}</span>
            </button>
 
-           <button onClick={onSurrender} className="mt-4 flex w-full cursor-pointer items-center justify-center h-10 px-5 text-red-400/60 hover:text-red-400 transition-colors">
+           <button
+             type="button"
+             onPointerDown={(e) => {
+               e.preventDefault();
+               onSurrender();
+             }}
+             className="mt-4 flex w-full cursor-pointer items-center justify-center h-10 px-5 text-red-400/60 hover:text-red-400 transition-colors"
+             style={{ touchAction: 'manipulation' }}
+           >
              <span className="text-xs font-medium border-b border-red-400/30 pb-0.5">我都不想做，解除拦截</span>
            </button>
          </div>

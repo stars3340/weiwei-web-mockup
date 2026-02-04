@@ -7,7 +7,7 @@ export enum AppView {
   MEITUAN_SHIELD = 'MEITUAN_SHIELD',
   MEITUAN_APP = 'MEITUAN_APP',
 
-  WEIWEI_FIGMA = 'WEIWEI_FIGMA',
+  WEIWEI_APP = 'WEIWEI_APP',
 }
 
 export interface AppState {
@@ -19,7 +19,7 @@ export interface AppState {
     returns: number;
     savedMoney?: number;
   };
-  selectedEmotion?: string;
+  selectedEmotion?: EmotionType;
   figmaFrameId?: string;
   weiweiFrameId?: string;
   weiweiStack?: string[];
