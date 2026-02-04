@@ -25,7 +25,7 @@ export default function FigmaFrame({ alt, src, hotspots = [], designWidth = 393,
         alt={alt}
         src={src}
         className="absolute inset-0 w-full h-full pointer-events-none select-none"
-        style={{ objectFit: 'cover' }}
+        style={{ objectFit: 'fill' }}
         draggable={false}
       />
       {hotspots.map((h) => (
@@ -34,7 +34,7 @@ export default function FigmaFrame({ alt, src, hotspots = [], designWidth = 393,
           type="button"
           aria-label={h.ariaLabel}
           onClick={h.onClick}
-          className="absolute bg-transparent"
+          className="absolute bg-transparent cursor-pointer"
           style={{
             left: `${(h.x / designWidth) * 100}%`,
             top: `${(h.y / designHeight) * 100}%`,
@@ -46,4 +46,3 @@ export default function FigmaFrame({ alt, src, hotspots = [], designWidth = 393,
     </div>
   );
 }
-

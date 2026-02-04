@@ -204,11 +204,11 @@ const App: React.FC = () => {
         overflow-hidden here ensures no outer scroll.
         Inner components must handle their own scrolling via flex-1 overflow-y-auto 
       */}
-      <div className="w-[393px] h-[852px] max-w-[95vw] max-h-[90vh] bg-black relative shadow-2xl rounded-[48px] border-[8px] border-[#1a1a1a] ring-1 ring-gray-700 overflow-hidden flex flex-col">
+      <div
+        className="bg-black relative shadow-2xl rounded-[48px] border-[8px] border-[#1a1a1a] ring-1 ring-gray-700 overflow-hidden"
+        style={{ width: 393, height: 852, boxSizing: 'content-box', maxWidth: '95vw', maxHeight: '90vh' }}
+      >
         {renderView()}
-        
-        {/* iOS Home Indicator */}
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full z-[100] pointer-events-none"></div>
       </div>
     </div>
   );

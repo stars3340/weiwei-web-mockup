@@ -24,12 +24,13 @@ const SimulatedApp: React.FC<Props> = ({ onBackToSafety, onHome }) => {
        {/* Floating "Safety" Button - The "Return to NightGuard" path */}
        <button 
          onClick={onBackToSafety}
-         className="absolute bottom-24 right-4 z-50 w-16 h-16 rounded-full bg-primary shadow-2xl flex items-center justify-center animate-bounce border-2 border-white/20 active:scale-90 transition-transform"
+         className="absolute bottom-24 right-4 z-50 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center animate-bounce border-2 border-white/40 active:scale-90 transition-transform"
+         style={{ background: '#1D2547' }}
        >
-          <span className="material-symbols-outlined text-white text-[32px]">shield_person</span>
+          <span className="material-symbols-outlined text-white text-[32px]">chat</span>
        </button>
-       <div className="absolute bottom-12 right-4 z-50 text-[10px] text-gray-500 font-bold bg-white/80 px-2 py-1 rounded backdrop-blur-sm">
-          点我回头
+       <div className="absolute bottom-12 right-4 z-50 text-[10px] text-[#1D2547] font-semibold bg-white/85 px-2 py-1 rounded-[10px] backdrop-blur-sm border border-white/60">
+          回到喂喂
        </div>
 
        {/* Fake Content - Scrollable */}
