@@ -58,7 +58,7 @@ const App: React.FC = () => {
     opts?: { replace?: boolean; resetStack?: boolean; advanceCursor?: boolean; cursorStep?: number },
   ) => {
     const now = performance.now();
-    if (now - lastNavAtRef.current < 140) return;
+    if (now - lastNavAtRef.current < 90) return;
     lastNavAtRef.current = now;
     prefetchFrame(frameId);
     setState((prev) => {
@@ -82,6 +82,14 @@ const App: React.FC = () => {
       };
     });
   };
+
+  useEffect(() => {
+    // Warm up key WeiWei frames so first taps feel instant.
+    prefetchFrame(WEIWEI_FRAMES.home[0]);
+    prefetchFrame(WEIWEI_FRAMES.stage[0]);
+    prefetchFrame(WEIWEI_FRAMES.trends[0]);
+    prefetchFrame(WEIWEI_FRAMES.guard[0]);
+  }, []);
 
   const enterWeiweiAt = (frameId: string, opts?: { advanceCursor?: boolean; cursorStep?: number }) => {
     openWeiweiFrame(frameId, { resetStack: true, advanceCursor: opts?.advanceCursor, cursorStep: opts?.cursorStep });
@@ -240,7 +248,7 @@ const App: React.FC = () => {
         const frameId = state.weiweiFrameId ?? WEIWEI_FRAMES.home[0];
         const cursor = state.flowCursor ?? 0;
         const stackLen = (state.weiweiStack ?? []).length;
-        return { key: `WEIWEI:${frameId}`, node: (
+        return { key: 'WEIWEI', node: (
           <WeiweiNative
             frameId={frameId}
             cursor={cursor}
@@ -250,12 +258,7 @@ const App: React.FC = () => {
             onPop={popWeiweiFrame}
             onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}
           />
-        ), anim: (() => {
-          const kind = state.weiweiNavKind ?? 'replace';
-          if (kind === 'push') return { type: 'slide' as const, dir: 1 };
-          if (kind === 'pop') return { type: 'slide' as const, dir: -1 };
-          return { type: 'fade' as const, dir: 0 };
-        })() };
+        ) };
       }
       default:
         return { key: 'DEFAULT', node: <HomeScreen onOpenApp={() => {}} /> };
@@ -286,7 +289,7 @@ const App: React.FC = () => {
     <div className="min-h-screen w-full bg-[#111] text-white flex justify-center items-center overflow-hidden py-4 sm:py-8">
       <div className="relative" style={{ width: 'min(393px, 95vw)', aspectRatio: '393 / 852' }}>
         <div className="absolute inset-0 bg-black rounded-[40px] overflow-hidden shadow-2xl">
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="sync" initial={false}>
             <motion.div
               key={view.key}
               className="w-full h-full"
@@ -295,7 +298,7 @@ const App: React.FC = () => {
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
             >
               {view.node}
             </motion.div>

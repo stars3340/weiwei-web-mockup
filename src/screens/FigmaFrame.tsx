@@ -66,6 +66,8 @@ export default function FigmaFrame({ alt, src, hotspots = [], designWidth = 393,
       <img
         alt={alt}
         src={currentSrc}
+        decoding="async"
+        loading="eager"
         className="absolute inset-0 w-full h-full pointer-events-none select-none"
         style={{ objectFit: fit }}
         draggable={false}
@@ -74,6 +76,8 @@ export default function FigmaFrame({ alt, src, hotspots = [], designWidth = 393,
         <img
           alt={alt}
           src={nextSrc}
+          decoding="async"
+          loading="eager"
           className="absolute inset-0 w-full h-full pointer-events-none select-none transition-opacity duration-200"
           style={{ objectFit: fit, opacity: nextReady ? 1 : 0 }}
           onTransitionEnd={commitNext}
@@ -85,13 +89,18 @@ export default function FigmaFrame({ alt, src, hotspots = [], designWidth = 393,
           key={h.id}
           type="button"
           aria-label={h.ariaLabel}
-          onClick={h.onClick}
-          className="absolute bg-transparent cursor-pointer"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            h.onClick();
+          }}
+          tabIndex={-1}
+          className="absolute bg-transparent cursor-pointer border-0 p-0 outline-none focus:outline-none focus-visible:outline-none"
           style={{
             left: `${(h.x / designWidth) * 100}%`,
             top: `${(h.y / designHeight) * 100}%`,
             width: `${(h.w / designWidth) * 100}%`,
             height: `${(h.h / designHeight) * 100}%`,
+            touchAction: 'manipulation',
           }}
         />
       ))}

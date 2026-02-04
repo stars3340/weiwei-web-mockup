@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { getWeiweiFrameUi } from '../figma/hotspots';
 import { WEIWEI_FRAMES, isFrameInCategory, nextFrameId } from '../figma/flow';
 import { WEIWEI_WZX_FRAMES_BY_ID } from '../figma/weiwei-wzx';
@@ -24,9 +25,8 @@ type Props = {
   onOpen: (frameId: string, opts?: { replace?: boolean }) => void;
 };
 
-export default function WeiweiNative({ frameId, cursor, stackLen, onExit, onPop, onOpen }: Props) {
+function FrameContent({ frameId, cursor, stackLen, onExit, onPop, onOpen }: Omit<Props, 'navKind'>) {
   const ui = getWeiweiFrameUi(frameId);
-
   const src = getWeiweiWzxFrameSvg(frameId) ?? WEIWEI_WZX_FRAMES_BY_ID[frameId]?.image2xPng;
 
   const hotspots: Hotspot[] = [];
@@ -170,6 +170,8 @@ export default function WeiweiNative({ frameId, cursor, stackLen, onExit, onPop,
         <img
           alt={WEIWEI_WZX_FRAMES_BY_ID[frameId]?.name ?? 'WeiWei'}
           src={src}
+          decoding="async"
+          loading="eager"
           className="absolute inset-0 w-full h-full pointer-events-none select-none"
           style={{ objectFit: 'fill' }}
           draggable={false}
@@ -183,9 +185,13 @@ export default function WeiweiNative({ frameId, cursor, stackLen, onExit, onPop,
         <button
           type="button"
           aria-label="Exit"
-          onClick={onExit}
-          className="absolute bg-transparent"
-          style={{ left: 0, top: 0, width: '26%', height: '10%' }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onExit();
+          }}
+          tabIndex={-1}
+          className="absolute bg-transparent cursor-pointer border-0 p-0 outline-none focus:outline-none focus-visible:outline-none"
+          style={{ left: 0, top: 0, width: '20%', height: '8%', touchAction: 'manipulation' }}
         />
       )}
 
@@ -194,16 +200,64 @@ export default function WeiweiNative({ frameId, cursor, stackLen, onExit, onPop,
           key={h.id}
           type="button"
           aria-label={h.ariaLabel}
-          onClick={h.onClick}
-          className="absolute bg-transparent cursor-pointer"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            h.onClick();
+          }}
+          tabIndex={-1}
+          className="absolute bg-transparent cursor-pointer border-0 p-0 outline-none focus:outline-none focus-visible:outline-none"
           style={{
             left: `${(h.x / designWidth) * 100}%`,
             top: `${(h.y / designHeight) * 100}%`,
             width: `${(h.w / designWidth) * 100}%`,
             height: `${(h.h / designHeight) * 100}%`,
+            touchAction: 'manipulation',
           }}
         />
       ))}
+    </div>
+  );
+}
+
+export default function WeiweiNative({ frameId, cursor, stackLen, navKind, onExit, onPop, onOpen }: Props) {
+  const anim = (() => {
+    if (navKind === 'push') return { type: 'slide' as const, dir: 1 };
+    if (navKind === 'pop') return { type: 'slide' as const, dir: -1 };
+    return { type: 'fade' as const, dir: 0 };
+  })();
+
+  const frameVariants = {
+    initial: (custom: { type: 'fade' | 'slide'; dir: number }) => {
+      if (custom.type === 'slide') {
+        return { x: custom.dir > 0 ? 28 : -28, opacity: 0.0, pointerEvents: 'none' as const };
+      }
+      return { opacity: 0.0, scale: 0.995, pointerEvents: 'none' as const };
+    },
+    animate: { x: 0, opacity: 1, scale: 1, pointerEvents: 'auto' as const },
+    exit: (custom: { type: 'fade' | 'slide'; dir: number }) => {
+      if (custom.type === 'slide') {
+        return { x: custom.dir > 0 ? -28 : 28, opacity: 0.0, pointerEvents: 'none' as const };
+      }
+      return { opacity: 0.0, scale: 1.005, pointerEvents: 'none' as const };
+    },
+  } as const;
+
+  return (
+    <div className="relative w-full h-full overflow-hidden bg-black">
+      <AnimatePresence mode="sync" initial={false} custom={anim}>
+        <motion.div
+          key={frameId}
+          className="absolute inset-0"
+          custom={anim}
+          variants={frameVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={{ duration: 0.16, ease: 'easeOut' }}
+        >
+          <FrameContent frameId={frameId} cursor={cursor} stackLen={stackLen} onExit={onExit} onPop={onPop} onOpen={onOpen} />
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

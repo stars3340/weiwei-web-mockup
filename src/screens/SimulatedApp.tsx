@@ -24,7 +24,7 @@ const SimulatedApp: React.FC<Props> = ({ onBackToSafety, onHome }) => {
        {/* Floating "Safety" Button - The "Return to NightGuard" path */}
        <button 
          onClick={onBackToSafety}
-         className="absolute bottom-24 right-4 z-50 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center animate-bounce border-2 border-white/40 active:scale-90 transition-transform"
+         className="absolute bottom-24 right-4 z-50 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center border-2 border-white/40 active:scale-90 transition-transform duration-150"
          style={{ background: '#1D2547' }}
        >
           <span className="material-symbols-outlined text-white text-[32px]">chat</span>
