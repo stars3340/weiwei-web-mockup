@@ -9,6 +9,7 @@ import ShieldOverlay from './screens/ShieldOverlay';
 import SimulatedApp from './screens/SimulatedApp';
 import WeiweiNative from './screens/WeiweiNative';
 import { WEIWEI_WZX_FRAMES_BY_ID } from './figma/weiwei-wzx';
+import { getWeiweiWzxFrameSvg } from './figma/weiwei-wzx-svgs';
 import { WEIWEI_FRAMES, isFrameInCategory, nextFrameId } from './figma/flow';
 
 const App: React.FC = () => {
@@ -47,7 +48,9 @@ const App: React.FC = () => {
 
   const prefetchFrame = (frameId: string) => {
     const f = WEIWEI_WZX_FRAMES_BY_ID[frameId];
-    if (f?.image2xPng) prefetchUrl(f.image2xPng);
+    const svg = getWeiweiWzxFrameSvg(frameId);
+    if (svg) prefetchUrl(svg);
+    else if (f?.image2xPng) prefetchUrl(f.image2xPng);
   };
 
   const openWeiweiFrame = (
