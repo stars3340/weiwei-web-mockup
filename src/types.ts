@@ -12,6 +12,9 @@ export enum AppView {
 
   TRENDS = 'TRENDS',
   GUARD_SETTINGS = 'GUARD_SETTINGS',
+
+  FIGMA_GALLERY = 'FIGMA_GALLERY',
+  FIGMA_FRAME = 'FIGMA_FRAME',
 }
 
 export interface AppState {
@@ -21,6 +24,7 @@ export interface AppState {
     attempts: number;
     returns: number;
   };
+  figmaFrameId?: string;
 }
 
 export type EmotionType = 'hunger' | 'stress' | 'reward' | 'habit';

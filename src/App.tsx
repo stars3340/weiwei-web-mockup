@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { AppState, AppView } from './types';
 import FigmaFrame from './screens/FigmaFrame';
+import FigmaGallery from './screens/FigmaGallery';
 import HomeScreen from './screens/HomeScreen';
 import ShieldOverlay from './screens/ShieldOverlay';
 import SimulatedApp from './screens/SimulatedApp';
+import { WEIWEI_WZX_FRAMES_BY_ID } from './figma/weiwei-wzx';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
@@ -18,17 +20,6 @@ const App: React.FC = () => {
   const navigateTo = (view: AppView) => setState((prev) => ({ ...prev, currentView: view }));
   const updateState = (updates: Partial<AppState>) => setState((prev) => ({ ...prev, ...updates }));
 
-  const FIGMA = {
-    weweiHome: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/5803d9a7-0186-4be5-89c9-554dc1edf140',
-    feeling: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/6050534e-e04f-4a6f-9a4c-d4e9e8f93f1d',
-    breathing: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/6e0d63e2-67e1-4145-9c32-aedf6b55be3b',
-    desire: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/8838c6db-0748-47db-baf0-37b2ebf4e5da',
-    actions: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/c0f08753-c6fc-4304-9021-9543e4ea3013',
-    checkin: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/78d30bcb-0892-4322-b23e-9b7bae4f018c',
-    trends: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/bf2f6ec1-065e-41ce-a806-42738794adf6',
-    guard: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/4d024f65-5ccd-41cd-95e6-6cea478d1199',
-  } as const;
-
   useEffect(() => {
     if (state.currentView !== AppView.SESSION_BREATHING) return;
     const t = setTimeout(() => {
@@ -37,11 +28,47 @@ const App: React.FC = () => {
     return () => clearTimeout(t);
   }, [state.currentView]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'g') {
+        setState((prev) => ({ ...prev, currentView: AppView.FIGMA_GALLERY }));
+        return;
+      }
+      if (e.key === 'Escape') {
+        setState((prev) => ({ ...prev, currentView: AppView.OS_HOME }));
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const renderView = () => {
     switch (state.currentView) {
+      case AppView.FIGMA_GALLERY:
+        return (
+          <FigmaGallery
+            onClose={() => navigateTo(AppView.OS_HOME)}
+            onOpenFrame={(frameId) => setState((prev) => ({ ...prev, currentView: AppView.FIGMA_FRAME, figmaFrameId: frameId }))}
+          />
+        );
+      case AppView.FIGMA_FRAME: {
+        const f = state.figmaFrameId ? WEIWEI_WZX_FRAMES_BY_ID[state.figmaFrameId] : undefined;
+        return (
+          <FigmaFrame
+            alt={f?.name ?? 'Figma Frame'}
+            src={f?.image2xPng ?? WEIWEI_WZX_FRAMES_BY_ID['1:1768'].image2xPng}
+            designWidth={f?.width ?? 393}
+            designHeight={f?.height ?? 852}
+            hotspots={[
+              { id: 'back', ariaLabel: 'Back to gallery', x: 12, y: 12, w: 120, h: 80, onClick: () => navigateTo(AppView.FIGMA_GALLERY) },
+            ]}
+          />
+        );
+      }
       case AppView.OS_HOME:
         return (
           <HomeScreen 
+            onOpenGallery={() => navigateTo(AppView.FIGMA_GALLERY)}
             onOpenApp={(appName) => {
               if (appName === 'Meituan') {
                 navigateTo(AppView.MEITUAN_SHIELD);
@@ -76,10 +103,10 @@ const App: React.FC = () => {
         return (
           <FigmaFrame
             alt="WeiWei Home"
-            src={FIGMA.weweiHome}
+            src={WEIWEI_WZX_FRAMES_BY_ID['1:1768'].image2xPng}
             hotspots={[
               { id: 'close', ariaLabel: 'Close', x: 55, y: 240, w: 44, h: 44, onClick: () => navigateTo(AppView.OS_HOME) },
-              { id: 'start', ariaLabel: 'Start session', x: 250, y: 600, w: 120, h: 160, onClick: () => navigateTo(AppView.SESSION_FEELING) },
+              { id: 'start', ariaLabel: 'Start session', x: 260, y: 620, w: 90, h: 90, onClick: () => navigateTo(AppView.SESSION_FEELING) },
               { id: 'tab_trends', ariaLabel: 'Trends', x: 107, y: 744, w: 56, h: 54, onClick: () => navigateTo(AppView.TRENDS) },
               { id: 'tab_home', ariaLabel: 'Home', x: 163, y: 744, w: 67, h: 54, onClick: () => navigateTo(AppView.SESSION_FEELING) },
               { id: 'tab_guard', ariaLabel: 'Guard settings', x: 230, y: 744, w: 47, h: 54, onClick: () => navigateTo(AppView.GUARD_SETTINGS) },
@@ -90,7 +117,7 @@ const App: React.FC = () => {
         return (
           <FigmaFrame
             alt="Feeling selection"
-            src={FIGMA.feeling}
+            src={WEIWEI_WZX_FRAMES_BY_ID['1:336'].image2xPng}
             hotspots={[
               { id: 'back', ariaLabel: 'Back', x: 18, y: 33, w: 90, h: 90, onClick: () => navigateTo(AppView.WEIWEI_HOME) },
               { id: 'settings', ariaLabel: 'Guard settings', x: 325, y: 51, w: 40, h: 40, onClick: () => navigateTo(AppView.GUARD_SETTINGS) },
@@ -107,7 +134,7 @@ const App: React.FC = () => {
         return (
           <FigmaFrame
             alt="Breathing"
-            src={FIGMA.breathing}
+            src={WEIWEI_WZX_FRAMES_BY_ID['1:415'].image2xPng}
             hotspots={[
               { id: 'back', ariaLabel: 'Back', x: 18, y: 33, w: 90, h: 90, onClick: () => navigateTo(AppView.SESSION_FEELING) },
               { id: 'skip', ariaLabel: 'Skip', x: 55, y: 149, w: 285, h: 285, onClick: () => navigateTo(AppView.SESSION_CHECKIN) },
@@ -121,7 +148,7 @@ const App: React.FC = () => {
         return (
           <FigmaFrame
             alt="Check-in"
-            src={FIGMA.checkin}
+            src={WEIWEI_WZX_FRAMES_BY_ID['1:743'].image2xPng}
             hotspots={[
               { id: 'back', ariaLabel: 'Back', x: 18, y: 33, w: 90, h: 90, onClick: () => navigateTo(AppView.SESSION_FEELING) },
               { id: 'ans1', ariaLabel: 'Answer 1', x: 115, y: 590, w: 170, h: 42, onClick: () => navigateTo(AppView.SESSION_DESIRE) },
@@ -137,7 +164,7 @@ const App: React.FC = () => {
         return (
           <FigmaFrame
             alt="Desire"
-            src={FIGMA.desire}
+            src={WEIWEI_WZX_FRAMES_BY_ID['1:861'].image2xPng}
             hotspots={[
               { id: 'back', ariaLabel: 'Back', x: 18, y: 33, w: 90, h: 90, onClick: () => navigateTo(AppView.SESSION_FEELING) },
               { id: 'settings', ariaLabel: 'Guard settings', x: 325, y: 51, w: 40, h: 40, onClick: () => navigateTo(AppView.GUARD_SETTINGS) },
@@ -154,7 +181,7 @@ const App: React.FC = () => {
         return (
           <FigmaFrame
             alt="Actions"
-            src={FIGMA.actions}
+            src={WEIWEI_WZX_FRAMES_BY_ID['1:1169'].image2xPng}
             hotspots={[
               { id: 'back', ariaLabel: 'Back', x: 18, y: 33, w: 90, h: 90, onClick: () => navigateTo(AppView.SESSION_DESIRE) },
               { id: 'act1', ariaLabel: 'Action 1', x: 80, y: 470, w: 260, h: 75, onClick: () => navigateTo(AppView.SESSION_BREATHING) },
@@ -170,7 +197,7 @@ const App: React.FC = () => {
         return (
           <FigmaFrame
             alt="Trends"
-            src={FIGMA.trends}
+            src={WEIWEI_WZX_FRAMES_BY_ID['1:1887'].image2xPng}
             hotspots={[
               { id: 'tab_trends', ariaLabel: 'Trends', x: 107, y: 744, w: 56, h: 54, onClick: () => navigateTo(AppView.TRENDS) },
               { id: 'tab_home', ariaLabel: 'Home', x: 163, y: 744, w: 67, h: 54, onClick: () => navigateTo(AppView.SESSION_FEELING) },
@@ -183,7 +210,7 @@ const App: React.FC = () => {
         return (
           <FigmaFrame
             alt="Guard settings"
-            src={FIGMA.guard}
+            src={WEIWEI_WZX_FRAMES_BY_ID['1:1962'].image2xPng}
             hotspots={[
               { id: 'tab_trends', ariaLabel: 'Trends', x: 107, y: 744, w: 56, h: 54, onClick: () => navigateTo(AppView.TRENDS) },
               { id: 'tab_home', ariaLabel: 'Home', x: 163, y: 744, w: 67, h: 54, onClick: () => navigateTo(AppView.SESSION_FEELING) },
