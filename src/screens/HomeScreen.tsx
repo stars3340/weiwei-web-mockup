@@ -5,7 +5,7 @@ interface Props {
 }
 
 const HomeScreen: React.FC<Props> = ({ onOpenApp }) => {
-  const currentTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const currentTime = '21:30';
 
   return (
     <div className="relative w-full h-full overflow-hidden animate-fade-in">
@@ -40,7 +40,7 @@ const HomeScreen: React.FC<Props> = ({ onOpenApp }) => {
           <div className="size-[60px] rounded-[14px] bg-[#FFC300] flex items-center justify-center shadow-lg group-active:scale-90 transition-transform duration-200">
              <span className="material-symbols-outlined text-[#333] text-[32px]">lunch_dining</span>
           </div>
-          <span className="text-white text-[11px] font-medium drop-shadow-md">美团外卖</span>
+          <span className="text-[#1D2547] text-[11px] font-semibold drop-shadow-sm">美团外卖</span>
         </div>
 
         {/* WeiWei */}
@@ -60,7 +60,7 @@ const HomeScreen: React.FC<Props> = ({ onOpenApp }) => {
             }`}>
               <div className="opacity-80 mix-blend-multiply"></div>
             </div>
-            <span className="text-white text-[11px] font-medium drop-shadow-md">{app}</span>
+            <span className="text-[#1D2547] text-[11px] font-medium opacity-70 drop-shadow-sm">{app}</span>
           </div>
         ))}
       </div>

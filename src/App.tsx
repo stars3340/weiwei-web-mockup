@@ -199,16 +199,9 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#111] text-white flex justify-center items-center overflow-hidden py-4 sm:py-8">
-      {/* 
-        Fixed Container to simulate mobile view.
-        overflow-hidden here ensures no outer scroll.
-        Inner components must handle their own scrolling via flex-1 overflow-y-auto 
-      */}
-      <div
-        className="bg-black relative shadow-2xl rounded-[48px] border-[8px] border-[#1a1a1a] ring-1 ring-gray-700 overflow-hidden"
-        style={{ width: 393, height: 852, boxSizing: 'content-box', maxWidth: '95vw', maxHeight: '90vh' }}
-      >
-        {renderView()}
+      <div className="relative" style={{ width: 'min(393px, 95vw)', aspectRatio: '393 / 852' }}>
+        <div className="absolute inset-0 bg-black rounded-[40px] overflow-hidden shadow-2xl">{renderView()}</div>
+        <div className="absolute -inset-2 rounded-[48px] border-[8px] border-[#1a1a1a] ring-1 ring-gray-700 pointer-events-none"></div>
       </div>
     </div>
   );
