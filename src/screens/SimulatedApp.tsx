@@ -23,7 +23,10 @@ const SimulatedApp: React.FC<Props> = ({ onBackToSafety, onHome }) => {
 
        {/* Floating "Safety" Button - The "Return to NightGuard" path */}
        <button 
-         onClick={onBackToSafety}
+         onPointerDown={(e) => {
+           e.preventDefault();
+           onBackToSafety();
+         }}
          className="absolute bottom-24 right-4 z-50 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center border-2 border-white/40 active:scale-90 transition-transform duration-150"
          style={{ background: '#1D2547' }}
        >

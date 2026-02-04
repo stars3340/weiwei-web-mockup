@@ -55,7 +55,10 @@ const ShieldOverlay: React.FC<Props> = ({ intensity, onReturnToFocus, onIgnore }
 
             <div className="mt-6 w-full flex flex-col gap-3">
               <button
-                onClick={onReturnToFocus}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  onReturnToFocus();
+                }}
                 className="w-full h-[52px] rounded-[18px] text-white text-[15px] font-semibold active:scale-[0.98] transition"
                 style={{ background: '#1D2547' }}
               >
@@ -64,7 +67,10 @@ const ShieldOverlay: React.FC<Props> = ({ intensity, onReturnToFocus, onIgnore }
 
               {intensity !== 'strict' && (
                 <button
-                  onClick={onIgnore}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    onIgnore();
+                  }}
                   className="w-full h-[52px] rounded-[18px] text-[15px] font-semibold active:scale-[0.98] transition border border-white/60"
                   style={{ background: 'rgba(255,255,255,0.35)', color: '#1D2547', backdropFilter: 'blur(20px)' }}
                 >

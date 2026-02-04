@@ -93,7 +93,20 @@ export default function AppIcon({ name, onClick }: { name: AppIconName; onClick?
     <Root
       {...(isInteractive ? { type: 'button' } : {})}
       aria-label={iconLabel[name]}
-      {...(isInteractive ? { onClick } : {})}
+      {...(isInteractive
+        ? {
+            onPointerDown: (e: React.PointerEvent) => {
+              e.preventDefault();
+              onClick?.();
+            },
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick?.();
+              }
+            },
+          }
+        : {})}
       className={[
         'flex flex-col items-center gap-1.5 group select-none',
         isInteractive ? 'cursor-pointer' : 'cursor-default',

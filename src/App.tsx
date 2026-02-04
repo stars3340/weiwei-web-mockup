@@ -11,6 +11,7 @@ import WeiweiNative from './screens/WeiweiNative';
 import { WEIWEI_WZX_FRAMES_BY_ID } from './figma/weiwei-wzx';
 import { getWeiweiWzxFrameSvg } from './figma/weiwei-wzx-svgs';
 import { WEIWEI_FRAMES, isFrameInCategory, nextFrameId } from './figma/flow';
+import { WEIWEI_WZX_LOGO_SVG } from './figma/weiwei-wzx';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
@@ -89,6 +90,61 @@ const App: React.FC = () => {
     prefetchFrame(WEIWEI_FRAMES.stage[0]);
     prefetchFrame(WEIWEI_FRAMES.trends[0]);
     prefetchFrame(WEIWEI_FRAMES.guard[0]);
+  }, []);
+
+  useEffect(() => {
+    // Preload all demo frames in the background to eliminate "tap then wait".
+    const urls: string[] = [];
+    for (const f of Object.values(WEIWEI_WZX_FRAMES_BY_ID)) {
+      const u = getWeiweiWzxFrameSvg(f.id) ?? f.image2xPng;
+      if (u) urls.push(u);
+    }
+    if (WEIWEI_WZX_LOGO_SVG) urls.push(WEIWEI_WZX_LOGO_SVG);
+
+    const queue = urls.filter((u) => !prefetchedUrlsRef.current.has(u));
+    if (queue.length === 0) return;
+
+    let cancelled = false;
+    let active = 0;
+    const maxConcurrent = 4;
+
+    const pump = () => {
+      if (cancelled) return;
+      while (active < maxConcurrent && queue.length > 0) {
+        const url = queue.shift();
+        if (!url) continue;
+        if (prefetchedUrlsRef.current.has(url)) continue;
+        active += 1;
+
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = img.onerror = () => {
+          active -= 1;
+          pump();
+        };
+        prefetchedUrlsRef.current.add(url);
+        img.src = url;
+      }
+    };
+
+    const start = () => pump();
+
+    if ('requestIdleCallback' in window) {
+      const id = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout?: number }) => number }).requestIdleCallback(
+        start,
+        { timeout: 2000 },
+      );
+      return () => {
+        cancelled = true;
+        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback?.(id);
+      };
+    }
+
+    const t = window.setTimeout(start, 120);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
   }, []);
 
   const enterWeiweiAt = (frameId: string, opts?: { advanceCursor?: boolean; cursorStep?: number }) => {
