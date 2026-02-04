@@ -16,16 +16,17 @@ type Props = {
   hotspots?: FigmaHotspot[];
   designWidth?: number;
   designHeight?: number;
+  fit?: 'fill' | 'contain';
 };
 
-export default function FigmaFrame({ alt, src, hotspots = [], designWidth = 393, designHeight = 852 }: Props) {
+export default function FigmaFrame({ alt, src, hotspots = [], designWidth = 393, designHeight = 852, fit = 'fill' }: Props) {
   return (
     <div className="relative w-full h-full overflow-hidden">
       <img
         alt={alt}
         src={src}
         className="absolute inset-0 w-full h-full pointer-events-none select-none"
-        style={{ objectFit: 'fill' }}
+        style={{ objectFit: fit }}
         draggable={false}
       />
       {hotspots.map((h) => (

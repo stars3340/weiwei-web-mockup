@@ -44,8 +44,8 @@ export default function FigmaGallery({ onOpenFrame, onClose }: Props) {
               onClick={() => onOpenFrame(f.id)}
               className="text-left rounded-2xl overflow-hidden border border-white/10 hover:border-white/20 bg-white/5 active:scale-[0.99] transition"
             >
-              <div className="relative w-full aspect-[393/852] bg-black">
-                <img alt={f.name} src={f.image2xPng} className="absolute inset-0 w-full h-full" style={{ objectFit: 'fill' }} />
+              <div className="relative w-full bg-black" style={{ aspectRatio: `${f.width} / ${f.height}` }}>
+                <img alt={f.name} src={f.image2xPng} className="absolute inset-0 w-full h-full" style={{ objectFit: 'contain' }} />
               </div>
               <div className="px-3 py-2">
                 <div className="text-sm font-semibold">{f.name}</div>
@@ -58,4 +58,3 @@ export default function FigmaGallery({ onOpenFrame, onClose }: Props) {
     </div>
   );
 }
-

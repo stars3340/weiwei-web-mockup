@@ -53,12 +53,14 @@ const App: React.FC = () => {
         );
       case AppView.FIGMA_FRAME: {
         const f = state.figmaFrameId ? WEIWEI_WZX_FRAMES_BY_ID[state.figmaFrameId] : undefined;
+        const fit = f && (f.width !== 393 || f.height !== 852) ? 'contain' : 'fill';
         return (
           <FigmaFrame
             alt={f?.name ?? 'Figma Frame'}
             src={f?.image2xPng ?? WEIWEI_WZX_FRAMES_BY_ID['1:1768'].image2xPng}
             designWidth={f?.width ?? 393}
             designHeight={f?.height ?? 852}
+            fit={fit}
             hotspots={[
               { id: 'back', ariaLabel: 'Back to gallery', x: 12, y: 12, w: 120, h: 80, onClick: () => navigateTo(AppView.FIGMA_GALLERY) },
             ]}

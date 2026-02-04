@@ -11,8 +11,15 @@ export const WEIWEI_WZX_LOGO_SVG = 'https://figma-alpha-api.s3.us-west-2.amazona
 // Exported from Figma file `weiwei-wzx` (fileKey: q76dE7mXvHodTtGZlKe6xS)
 // Note: these are remote render URLs; suitable for demos.
 export const WEIWEI_WZX_FRAMES: FigmaFrameDef[] = [
+  { id: '1:2094', name: 'Play', width: 135, height: 135, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/04ca52a6-07f0-4fa7-aa5a-7c02f1e8a9bb' },
   { id: '1:33', name: 'iPhone 16 - 1', width: 393, height: 852, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/3ccf8d88-0240-4c07-9b12-fa961f9d49ba' },
   { id: '1:178', name: 'iPhone 16 - 2', width: 393, height: 852, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/974bf50b-426c-45c2-86fc-bf41f781ec44' },
+
+  { id: '1:1747', name: 'Frame 18', width: 198, height: 54, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/c78b8842-86e0-455b-bdb1-212a3c007cfc' },
+  { id: '1:1763', name: 'Frame 9', width: 72, height: 72, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/790878a3-0372-4ee0-8703-36e749137cc5' },
+  { id: '1:2022', name: 'Frame 7', width: 72, height: 72, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/8f8d7dc2-14d2-43a8-ad4b-3207707ac95a' },
+  { id: '1:2026', name: 'Frame 8', width: 83, height: 83, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/c31c90a7-151b-457f-8684-04e930035bd8' },
+  { id: '1:2088', name: 'Frame 16', width: 393, height: 203, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/1d4e0a58-0ad4-40de-89f5-d29019f5beb6' },
 
   { id: '1:1830', name: 'iPhone 16 - 5', width: 393, height: 852, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/9d9a9f86-f735-4481-9eec-41c44eb8b58d' },
   { id: '1:1768', name: 'iPhone 16 - 7', width: 393, height: 852, image2xPng: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/5803d9a7-0186-4be5-89c9-554dc1edf140' },
@@ -48,4 +55,3 @@ export const WEIWEI_WZX_FRAMES: FigmaFrameDef[] = [
 export const WEIWEI_WZX_FRAMES_BY_ID: Record<string, FigmaFrameDef> = Object.fromEntries(
   WEIWEI_WZX_FRAMES.map((f) => [f.id, f]),
 );
-
