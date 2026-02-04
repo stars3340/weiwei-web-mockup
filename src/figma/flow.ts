@@ -1,6 +1,7 @@
 export const WEIWEI_FRAMES = {
   home: ['1:1768'],
-  feeling: ['1:336', '1:1608', '1:1695'],
+  stage: ['1:1695', '1:1608'],
+  feeling: ['1:336'],
   breathing: ['1:415', '1:523', '1:637', '1:469', '1:580', '1:690', '1:1313', '1:1367', '1:1424'],
   checkin: ['1:743', '1:1477', '1:802'],
   desire: ['1:861', '1:938', '1:1092', '1:1015'],
@@ -19,4 +20,3 @@ export function nextFrameId(list: readonly string[], cursor: number) {
   if (list.length === 0) return '';
   return list[cursor % list.length];
 }
-

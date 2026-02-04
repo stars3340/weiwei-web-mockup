@@ -3,10 +3,11 @@ import { WEIWEI_WZX_FRAMES } from '../figma/weiwei-wzx';
 
 type Props = {
   onOpenFrame: (frameId: string) => void;
+  onOpenVideos: () => void;
   onClose: () => void;
 };
 
-export default function FigmaGallery({ onOpenFrame, onClose }: Props) {
+export default function FigmaGallery({ onOpenFrame, onOpenVideos, onClose }: Props) {
   const [query, setQuery] = useState('');
   const frames = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -27,6 +28,13 @@ export default function FigmaGallery({ onOpenFrame, onClose }: Props) {
         </button>
         <div className="font-semibold">Figma / weiwei-wzx</div>
         <div className="flex-1" />
+        <button
+          type="button"
+          onClick={onOpenVideos}
+          className="px-3 py-2 text-sm rounded-xl bg-white/10 hover:bg-white/15 active:scale-[0.99] transition"
+        >
+          Videos
+        </button>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
