@@ -25,6 +25,7 @@ const App: React.FC = () => {
     flowCursor: 0,
     weiweiNavKind: 'reset',
   });
+  const [debugOverlay, setDebugOverlay] = useState(false);
 
   const navigateTo = (view: AppView) => setState((prev) => ({ ...prev, currentView: view }));
   const updateState = (updates: Partial<AppState>) => setState((prev) => ({ ...prev, ...updates }));
@@ -82,6 +83,10 @@ const App: React.FC = () => {
       }
       if (e.key.toLowerCase() === 'v') {
         setState((prev) => ({ ...prev, currentView: AppView.DEMO_VIDEOS }));
+        return;
+      }
+      if (e.key.toLowerCase() === 'd') {
+        setDebugOverlay((v) => !v);
         return;
       }
       if (e.key === 'Escape') {
@@ -173,6 +178,7 @@ const App: React.FC = () => {
             onExit={() => navigateTo(AppView.OS_HOME)}
             onPop={popWeiweiFrame}
             onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}
+            debugOverlay={debugOverlay}
           />
         ) };
       }

@@ -20,6 +20,7 @@ type Props = {
   onExit: () => void;
   onPop: () => void;
   onOpen: (frameId: string, opts?: { replace?: boolean }) => void;
+  debugOverlay?: boolean;
 };
 
 const DW = 393;
@@ -32,7 +33,7 @@ const rect = (x: number, y: number, w: number, h: number) => ({
   height: pct(h, DH),
 });
 
-function HomeFigma({ onStart }: { onStart: () => void }) {
+function HomeFigma({ onStart, debugOverlay, frameId }: { onStart: () => void; debugOverlay?: boolean; frameId: string }) {
   return (
     <div className="relative w-full h-full overflow-hidden bg-[#101010] text-white">
       {/* Ambient blobs (from Figma frame 1:33) */}
@@ -49,8 +50,15 @@ function HomeFigma({ onStart }: { onStart: () => void }) {
         aria-label="Profile"
       >
         <div className="absolute inset-0 rounded-full" style={{ background: '#E1FCFF' }} />
-        <div className="absolute inset-[6px] rounded-full bg-black/20" />
-        <div className="absolute inset-0 grid place-items-center text-[#1D2547] font-bold text-[16px]">L</div>
+        <img
+          alt="Avatar"
+          src="/figma/weiwei-wzx/ui/avatar.png"
+          className="absolute inset-0 w-full h-full rounded-full"
+          style={{ objectFit: 'cover' }}
+          draggable={false}
+          decoding="async"
+          loading="eager"
+        />
       </button>
       <div
         className="absolute"
@@ -97,9 +105,9 @@ function HomeFigma({ onStart }: { onStart: () => void }) {
       >
         <img
           alt="Monster"
-          src="/monster.png"
+          src="/figma/weiwei-wzx/ui/monster_home.png"
           className="absolute inset-0 w-full h-full"
-          style={{ objectFit: 'cover', borderRadius: 32, opacity: 0.90 }}
+          style={{ objectFit: 'cover', opacity: 0.90 }}
           draggable={false}
           decoding="async"
           loading="eager"
@@ -134,7 +142,7 @@ function HomeFigma({ onStart }: { onStart: () => void }) {
         style={{ ...rect(121, 761, 20, 20), touchAction: 'manipulation' }}
         aria-label="Home"
       >
-        <span className="material-symbols-outlined text-[20px]">home</span>
+        <img alt="" src="/figma/weiwei-wzx/ui/home_outlined.svg" className="w-[21px] h-[20px]" draggable={false} />
       </button>
       <button
         type="button"
@@ -142,7 +150,7 @@ function HomeFigma({ onStart }: { onStart: () => void }) {
         style={{ ...rect(243, 761, 20, 20), touchAction: 'manipulation' }}
         aria-label="User"
       >
-        <span className="material-symbols-outlined text-[20px]">person</span>
+        <img alt="" src="/figma/weiwei-wzx/ui/user_outlined.svg" className="w-[17px] h-[18px]" draggable={false} />
       </button>
       <button
         type="button"
@@ -167,6 +175,16 @@ function HomeFigma({ onStart }: { onStart: () => void }) {
           SOS
         </div>
       </button>
+
+      {debugOverlay && (
+        <img
+          alt=""
+          src={`/figma/weiwei-wzx/frames/${frameId.replace(/:/g, '-')}.svg`}
+          className="absolute inset-0 w-full h-full pointer-events-none select-none"
+          style={{ opacity: 0.35, mixBlendMode: 'difference' }}
+          draggable={false}
+        />
+      )}
     </div>
   );
 }
@@ -262,9 +280,13 @@ function DesireScreen({ onPick, onBack }: { onPick: (idx: number) => void; onBac
 function FeelingFigma({
   onPick,
   onSettings,
+  debugOverlay,
+  frameId,
 }: {
   onPick: (choice: 0 | 1 | 2) => void;
   onSettings: () => void;
+  debugOverlay?: boolean;
+  frameId: string;
 }) {
   return (
     <div
@@ -290,18 +312,18 @@ function FeelingFigma({
         LV.1
       </div>
 
-      {/* Settings */}
+      {/* Settings (Figma exported) */}
       <button
         type="button"
         onPointerDown={(e) => {
           e.preventDefault();
           onSettings();
         }}
-        className="absolute rounded-full border border-white/40 bg-white/30 backdrop-blur-xl grid place-items-center active:scale-[0.98]"
+        className="absolute border-0 bg-transparent p-0 active:scale-[0.98]"
         style={{ ...rect(325, 51, 40, 40), touchAction: 'manipulation' }}
         aria-label="Settings"
       >
-        <span className="material-symbols-outlined text-[#1D2547] text-[20px]">settings</span>
+        <img alt="" src="/figma/weiwei-wzx/ui/settings_button.svg" className="w-full h-full" draggable={false} />
       </button>
 
       {/* Tip pill */}
@@ -327,9 +349,9 @@ function FeelingFigma({
       <div style={{ ...rect(86, 210, 222, 224) }} className="absolute">
         <img
           alt="Monster"
-          src="/monster.png"
+          src="/figma/weiwei-wzx/ui/monster_feeling.png"
           className="absolute inset-0 w-full h-full"
-          style={{ objectFit: 'cover', borderRadius: 28, opacity: 0.90 }}
+          style={{ objectFit: 'cover', opacity: 0.90 }}
           draggable={false}
           decoding="async"
           loading="eager"
@@ -340,9 +362,9 @@ function FeelingFigma({
 
       {/* Options (from Figma text positions & hotspot rows) */}
       {[
-        { label: '今天很糟糕', y: 466, emotion: 'stress' as const, icon: 'sentiment_very_dissatisfied' },
-        { label: '说不上来，很难受', y: 540, emotion: 'hunger' as const, icon: 'sentiment_dissatisfied' },
-        { label: '压力太大了', y: 614, emotion: 'habit' as const, icon: 'sentiment_neutral' },
+        { label: '今天很糟糕', y: 466, iconSrc: '/figma/weiwei-wzx/ui/feeling_icon_1.svg' },
+        { label: '说不上来，很难受', y: 540, iconSrc: '/figma/weiwei-wzx/ui/feeling_icon_2.svg' },
+        { label: '压力太大了', y: 614, iconSrc: '/figma/weiwei-wzx/ui/feeling_icon_3.svg' },
       ].map((o, idx) => (
         <button
           key={o.label}
@@ -356,8 +378,11 @@ function FeelingFigma({
           aria-label={o.label}
         >
           <div className="absolute inset-0 rounded-[28px]" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55)' }} />
-          <div className="absolute rounded-full bg-white/60 border border-white/70 grid place-items-center" style={{ ...rect(12, 12, 60.98, 60.98) }}>
-            <span className="material-symbols-outlined text-[#1D2547] text-[24px]">{o.icon}</span>
+          <div
+            className="absolute rounded-full bg-white/60 border border-white/70 grid place-items-center overflow-hidden"
+            style={{ ...rect(12, 12, 60.98, 60.98) }}
+          >
+            <img alt="" src={o.iconSrc} className="w-[40px] h-[40px]" draggable={false} />
           </div>
           <div
             className="absolute"
@@ -377,31 +402,49 @@ function FeelingFigma({
       ))}
 
       {/* Bottom nav (from Figma frame 1:405) */}
-      <div className="absolute rounded-[27px]" style={{ ...rect(107, 744, 170, 54), background: '#1D2547' }} />
+      <div
+        className="absolute rounded-[30px]"
+        style={{
+          ...rect(107, 744, 170, 54),
+          background: '#1D2547',
+          backdropFilter: 'blur(15px)',
+          WebkitBackdropFilter: 'blur(15px)',
+        }}
+      />
       <button
         type="button"
-        className="absolute grid place-items-center text-white/65 active:scale-[0.98]"
-        style={{ ...rect(120, 759, 24, 24), touchAction: 'manipulation' }}
+        className="absolute grid place-items-center active:scale-[0.98]"
+        style={{ ...rect(123, 761, 20, 20), touchAction: 'manipulation' }}
         aria-label="Trends"
       >
-        <span className="material-symbols-outlined text-[22px]">insights</span>
+        <img alt="" src="/figma/weiwei-wzx/ui/tab_trends.svg" className="w-[20px] h-[20px]" draggable={false} />
       </button>
       <button
         type="button"
-        className="absolute grid place-items-center text-white active:scale-[0.98]"
-        style={{ ...rect(184.5, 754.5, 33, 33), touchAction: 'manipulation' }}
+        className="absolute grid place-items-center active:scale-[0.98]"
+        style={{ ...rect(161, 744, 54, 54), touchAction: 'manipulation' }}
         aria-label="Home"
       >
-        <span className="material-symbols-outlined text-[30px]">home</span>
+        <img alt="" src="/figma/weiwei-wzx/ui/tab_home.svg" className="w-[54px] h-[54px]" draggable={false} />
       </button>
       <button
         type="button"
-        className="absolute grid place-items-center text-white/65 active:scale-[0.98]"
-        style={{ ...rect(248, 759, 24, 24), touchAction: 'manipulation' }}
+        className="absolute grid place-items-center active:scale-[0.98]"
+        style={{ ...rect(237, 761, 20, 20), touchAction: 'manipulation' }}
         aria-label="Guard"
       >
-        <span className="material-symbols-outlined text-[22px]">shield</span>
+        <img alt="" src="/figma/weiwei-wzx/ui/tab_guard.svg" className="w-[20px] h-[20px]" draggable={false} />
       </button>
+
+      {debugOverlay && (
+        <img
+          alt=""
+          src={`/figma/weiwei-wzx/frames/${frameId.replace(/:/g, '-')}.svg`}
+          className="absolute inset-0 w-full h-full pointer-events-none select-none"
+          style={{ opacity: 0.35, mixBlendMode: 'difference' }}
+          draggable={false}
+        />
+      )}
     </div>
   );
 }
@@ -417,6 +460,7 @@ export default function WeiweiApp({
   onExit,
   onPop,
   onOpen,
+  debugOverlay,
 }: Props) {
   const anim = (() => {
     if (navKind === 'push') return { type: 'slide' as const, dir: 1 };
@@ -438,7 +482,7 @@ export default function WeiweiApp({
 
   const node = (() => {
     if (isFrameInCategory(frameId, 'home')) {
-      return <HomeFigma onStart={() => onOpen(WEIWEI_FRAMES.feeling[0])} />;
+      return <HomeFigma frameId={frameId} debugOverlay={debugOverlay} onStart={() => onOpen(WEIWEI_FRAMES.feeling[0])} />;
     }
     if (isFrameInCategory(frameId, 'stage')) {
       return (
@@ -454,6 +498,8 @@ export default function WeiweiApp({
     if (isFrameInCategory(frameId, 'feeling')) {
       return (
         <FeelingFigma
+          frameId={frameId}
+          debugOverlay={debugOverlay}
           onSettings={() => onOpen(WEIWEI_FRAMES.guard[0], { replace: true })}
           onPick={(choice) => {
             const mapped: EmotionType = choice === 0 ? 'stress' : choice === 1 ? 'hunger' : 'habit';
@@ -515,7 +561,7 @@ export default function WeiweiApp({
         />
       );
     }
-    return <HomeFigma onStart={() => onOpen(WEIWEI_FRAMES.feeling[0])} />;
+    return <HomeFigma frameId={frameId} debugOverlay={debugOverlay} onStart={() => onOpen(WEIWEI_FRAMES.feeling[0])} />;
   })();
 
   return (
