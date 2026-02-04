@@ -1,30 +1,26 @@
 export enum AppView {
-  HOME = 'HOME', // Simulated iOS Home Screen
-  SHIELD = 'SHIELD', // Simulated System Shield Overlay
-  SIMULATED_APP = 'SIMULATED_APP', // The "Forbidden" App (Meituan)
-  ONBOARDING = 'ONBOARDING',
-  MODE_SELECTION = 'MODE_SELECTION',
-  INTENSITY_SELECTION = 'INTENSITY_SELECTION',
-  DASHBOARD = 'DASHBOARD',
-  SETTINGS = 'SETTINGS',
-  RE_ENTRY = 'RE_ENTRY',
-  EMOTION_RECOGNITION = 'EMOTION_RECOGNITION',
-  ACTION_SUGGESTION = 'ACTION_SUGGESTION',
-  BREATHING = 'BREATHING',
-  DAILY_REVIEW = 'DAILY_REVIEW',
-  WEEKLY_REVIEW = 'WEEKLY_REVIEW'
+  OS_HOME = 'OS_HOME',
+  MEITUAN_SHIELD = 'MEITUAN_SHIELD',
+  MEITUAN_APP = 'MEITUAN_APP',
+
+  WEIWEI_HOME = 'WEIWEI_HOME',
+  SESSION_FEELING = 'SESSION_FEELING',
+  SESSION_BREATHING = 'SESSION_BREATHING',
+  SESSION_DESIRE = 'SESSION_DESIRE',
+  SESSION_ACTIONS = 'SESSION_ACTIONS',
+  SESSION_CHECKIN = 'SESSION_CHECKIN',
+
+  TRENDS = 'TRENDS',
+  GUARD_SETTINGS = 'GUARD_SETTINGS',
 }
 
 export interface AppState {
   currentView: AppView;
-  mode: 'night' | 'allDay';
   intensity: 'standard' | 'strict';
   stats: {
     attempts: number;
     returns: number;
-    savedMoney: number;
   };
-  selectedEmotion?: string;
 }
 
 export type EmotionType = 'hunger' | 'stress' | 'reward' | 'habit';

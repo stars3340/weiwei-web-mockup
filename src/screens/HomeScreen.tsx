@@ -8,11 +8,22 @@ const HomeScreen: React.FC<Props> = ({ onOpenApp }) => {
   const currentTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
 
   return (
-    <div className="relative w-full h-full bg-cover bg-center overflow-hidden animate-fade-in"
-         style={{ backgroundImage: `url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')` }}>
+    <div className="relative w-full h-full overflow-hidden animate-fade-in">
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(180deg, #FEDCFF 0%, #D1FAFF 100%)' }}
+      />
+      <div
+        className="absolute"
+        style={{ left: -149, top: 138, width: 346, height: 352, background: '#FFF8D9', filter: 'blur(300px)' }}
+      />
+      <div
+        className="absolute"
+        style={{ left: 220, top: 294, width: 276, height: 281, background: '#FFF8D9', filter: 'blur(300px)' }}
+      />
       
       {/* iOS Status Bar */}
-      <div className="absolute top-0 w-full px-6 py-3 flex justify-between items-center text-white z-20">
+      <div className="absolute top-0 w-full px-6 py-3 flex justify-between items-center text-[#1D2547] z-20">
         <span className="font-bold text-sm tracking-wide">{currentTime}</span>
         <div className="flex items-center gap-1.5">
           <span className="material-symbols-outlined text-[16px]">signal_cellular_alt</span>
@@ -34,11 +45,11 @@ const HomeScreen: React.FC<Props> = ({ onOpenApp }) => {
 
         {/* WeiWei */}
         <div className="flex flex-col items-center gap-1.5 cursor-pointer group" onClick={() => onOpenApp('WeiWei')}>
-          <div className="size-[60px] rounded-[14px] bg-[#1754cf] flex items-center justify-center shadow-lg group-active:scale-90 transition-transform duration-200 relative overflow-hidden">
-             <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent"></div>
-             <span className="material-symbols-outlined text-white text-[30px]">chat</span>
+          <div className="size-[60px] rounded-[14px] bg-[#1D2547] flex items-center justify-center shadow-lg group-active:scale-90 transition-transform duration-200 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent"></div>
+            <span className="material-symbols-outlined text-white text-[30px]">chat</span>
           </div>
-          <span className="text-white text-[11px] font-medium drop-shadow-md">喂喂</span>
+          <span className="text-[#1D2547] text-[11px] font-semibold drop-shadow-sm">喂喂</span>
         </div>
 
         {/* Filler Apps */}
@@ -55,7 +66,7 @@ const HomeScreen: React.FC<Props> = ({ onOpenApp }) => {
       </div>
 
       {/* Dock */}
-      <div className="absolute bottom-4 left-4 right-4 h-24 bg-white/20 backdrop-blur-xl rounded-[32px] flex items-center justify-around px-2 z-10">
+      <div className="absolute bottom-4 left-4 right-4 h-24 bg-white/35 backdrop-blur-xl rounded-[32px] flex items-center justify-around px-2 z-10 border border-white/40">
         {['Phone', 'Safari', 'Messages', 'Music'].map((app, i) => (
            <div key={i} className="flex flex-col items-center cursor-pointer group">
              <div className={`size-[60px] rounded-[14px] flex items-center justify-center shadow-lg group-active:scale-90 transition-transform duration-200 ${
@@ -71,9 +82,9 @@ const HomeScreen: React.FC<Props> = ({ onOpenApp }) => {
       
       {/* Page Dots */}
       <div className="absolute bottom-[120px] left-0 right-0 flex justify-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
-        <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
-        <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+        <div className="w-1.5 h-1.5 rounded-full bg-[#1D2547]"></div>
+        <div className="w-1.5 h-1.5 rounded-full bg-[#1D2547]/30"></div>
+        <div className="w-1.5 h-1.5 rounded-full bg-[#1D2547]/30"></div>
       </div>
     </div>
   );
