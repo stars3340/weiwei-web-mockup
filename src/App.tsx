@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AppState, AppView } from './types';
 import FigmaFrame from './screens/FigmaFrame';
 import FigmaGallery from './screens/FigmaGallery';
@@ -173,19 +174,19 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (state.currentView) {
       case AppView.FIGMA_GALLERY:
-        return (
+        return { key: 'FIGMA_GALLERY', node: (
           <FigmaGallery
             onClose={() => navigateTo(AppView.OS_HOME)}
             onOpenVideos={() => navigateTo(AppView.DEMO_VIDEOS)}
             onOpenFrame={(frameId) => setState((prev) => ({ ...prev, currentView: AppView.FIGMA_FRAME, figmaFrameId: frameId }))}
           />
-        );
+        ) };
       case AppView.DEMO_VIDEOS:
-        return <DemoVideos onClose={() => navigateTo(AppView.FIGMA_GALLERY)} />;
+        return { key: 'DEMO_VIDEOS', node: <DemoVideos onClose={() => navigateTo(AppView.FIGMA_GALLERY)} /> };
       case AppView.FIGMA_FRAME: {
         const f = state.figmaFrameId ? WEIWEI_WZX_FRAMES_BY_ID[state.figmaFrameId] : undefined;
         const fit = f && (f.width !== 393 || f.height !== 852) ? 'contain' : 'fill';
-        return (
+        return { key: `FIGMA_FRAME:${f?.id ?? 'unknown'}`, node: (
           <FigmaFrame
             alt={f?.name ?? 'Figma Frame'}
             src={f?.image2xPng ?? WEIWEI_WZX_FRAMES_BY_ID['1:1768'].image2xPng}
@@ -196,10 +197,10 @@ const App: React.FC = () => {
               { id: 'back', ariaLabel: 'Back to gallery', x: 12, y: 12, w: 120, h: 80, onClick: () => navigateTo(AppView.FIGMA_GALLERY) },
             ]}
           />
-        );
+        ) };
       }
       case AppView.OS_HOME:
-        return (
+        return { key: 'OS_HOME', node: (
           <HomeScreen 
             onOpenGallery={() => navigateTo(AppView.FIGMA_GALLERY)}
             onOpenApp={(appName) => {
@@ -210,9 +211,9 @@ const App: React.FC = () => {
               }
             }}
           />
-        );
+        ) };
       case AppView.MEITUAN_SHIELD:
-        return (
+        return { key: 'MEITUAN_SHIELD', node: (
           <ShieldOverlay 
             intensity={state.intensity}
             onReturnToFocus={() => {
@@ -224,39 +225,57 @@ const App: React.FC = () => {
               navigateTo(AppView.MEITUAN_APP);
             }}
           />
-        );
+        ) };
       case AppView.MEITUAN_APP:
-        return (
+        return { key: 'MEITUAN_APP', node: (
           <SimulatedApp 
             onBackToSafety={() => enterWeiweiAt(nextFrameId(WEIWEI_FRAMES.stage, (state.flowCursor ?? 0) + 1), { advanceCursor: true })}
             onHome={() => navigateTo(AppView.OS_HOME)}
           />
-        );
+        ) };
       case AppView.WEIWEI_FIGMA: {
         const frameId = state.weiweiFrameId ?? WEIWEI_FRAMES.home[0];
         const cursor = state.flowCursor ?? 0;
         const stackLen = (state.weiweiStack ?? []).length;
-        return (
-          <WeiweiNative
-            frameId={frameId}
-            cursor={cursor}
-            stackLen={stackLen}
-            navKind={state.weiweiNavKind ?? 'replace'}
-            onExit={() => navigateTo(AppView.OS_HOME)}
-            onPop={popWeiweiFrame}
-            onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}
-          />
-        );
+        return { key: `WEIWEI:${frameId}`, node: (
+          <AnimatePresence mode="wait" initial={false}>
+            <WeiweiNative
+              key={frameId}
+              frameId={frameId}
+              cursor={cursor}
+              stackLen={stackLen}
+              navKind={state.weiweiNavKind ?? 'replace'}
+              onExit={() => navigateTo(AppView.OS_HOME)}
+              onPop={popWeiweiFrame}
+              onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}
+            />
+          </AnimatePresence>
+        ) };
       }
       default:
-        return <HomeScreen onOpenApp={() => {}} />;
+        return { key: 'DEFAULT', node: <HomeScreen onOpenApp={() => {}} /> };
     }
   };
+
+  const view = useMemo(() => renderView(), [state]);
 
   return (
     <div className="min-h-screen w-full bg-[#111] text-white flex justify-center items-center overflow-hidden py-4 sm:py-8">
       <div className="relative" style={{ width: 'min(393px, 95vw)', aspectRatio: '393 / 852' }}>
-        <div className="absolute inset-0 bg-black rounded-[40px] overflow-hidden shadow-2xl">{renderView()}</div>
+        <div className="absolute inset-0 bg-black rounded-[40px] overflow-hidden shadow-2xl">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={view.key}
+              className="w-full h-full"
+              initial={{ opacity: 0.0, scale: 0.995 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0.0, scale: 1.005 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+            >
+              {view.node}
+            </motion.div>
+          </AnimatePresence>
+        </div>
         <div className="absolute -inset-2 rounded-[48px] border-[8px] border-[#1a1a1a] ring-1 ring-gray-700 pointer-events-none"></div>
       </div>
     </div>
