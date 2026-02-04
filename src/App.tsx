@@ -31,10 +31,31 @@ const App: React.FC = () => {
   const navigateTo = (view: AppView) => setState((prev) => ({ ...prev, currentView: view }));
   const updateState = (updates: Partial<AppState>) => setState((prev) => ({ ...prev, ...updates }));
 
+  const lastNavAtRef = useRef(0);
+  const prefetchedUrlsRef = useRef<Set<string>>(new Set());
+
+  const prefetchUrl = (url: string) => {
+    if (!url) return;
+    if (prefetchedUrlsRef.current.has(url)) return;
+    prefetchedUrlsRef.current.add(url);
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+  };
+
+  const prefetchFrame = (frameId: string) => {
+    const f = WEIWEI_WZX_FRAMES_BY_ID[frameId];
+    if (f?.image2xPng) prefetchUrl(f.image2xPng);
+  };
+
   const openWeiweiFrame = (
     frameId: string,
     opts?: { replace?: boolean; resetStack?: boolean; advanceCursor?: boolean; cursorStep?: number },
   ) => {
+    const now = performance.now();
+    if (now - lastNavAtRef.current < 140) return;
+    lastNavAtRef.current = now;
+    prefetchFrame(frameId);
     setState((prev) => {
       const nextStack = opts?.resetStack ? [] : [...(prev.weiweiStack ?? [])];
       if (opts?.replace) {
@@ -93,10 +114,52 @@ const App: React.FC = () => {
       if (!isFrameInCategory(frameId, 'breathing')) return;
       const cursor = s.flowCursor ?? 0;
       const nextCheckin = nextFrameId(WEIWEI_FRAMES.checkin, cursor);
-      openWeiweiFrame(nextCheckin, { advanceCursor: true });
+      openWeiweiFrame(nextCheckin);
     }, 16_000);
     return () => clearTimeout(t);
   }, [state.currentView, state.weiweiFrameId]);
+
+  useEffect(() => {
+    if (state.currentView !== AppView.WEIWEI_FIGMA) return;
+    const frameId = state.weiweiFrameId;
+    if (!frameId) return;
+
+    prefetchFrame(frameId);
+
+    const cursor = state.flowCursor ?? 0;
+    const candidates: string[] = [];
+
+    if (isFrameInCategory(frameId, 'home') || isFrameInCategory(frameId, 'stage')) {
+      candidates.push(WEIWEI_FRAMES.feeling[0], WEIWEI_FRAMES.guard[0], WEIWEI_FRAMES.trends[0]);
+    }
+    if (isFrameInCategory(frameId, 'feeling')) {
+      candidates.push(...WEIWEI_FRAMES.breathing, WEIWEI_FRAMES.guard[0], WEIWEI_FRAMES.trends[0], WEIWEI_FRAMES.home[0]);
+    }
+    if (isFrameInCategory(frameId, 'breathing')) {
+      candidates.push(...WEIWEI_FRAMES.checkin);
+    }
+    if (isFrameInCategory(frameId, 'checkin')) {
+      candidates.push(...WEIWEI_FRAMES.desire);
+    }
+    if (isFrameInCategory(frameId, 'desire')) {
+      candidates.push(...WEIWEI_FRAMES.actions);
+    }
+    if (isFrameInCategory(frameId, 'actions')) {
+      candidates.push(...WEIWEI_FRAMES.breathing, ...WEIWEI_FRAMES.checkin);
+    }
+    if (isFrameInCategory(frameId, 'guard')) {
+      candidates.push(...WEIWEI_FRAMES.guard, WEIWEI_FRAMES.home[0], WEIWEI_FRAMES.trends[0]);
+    }
+
+    // Add a few direct next variants (fast path)
+    candidates.push(
+      nextFrameId(WEIWEI_FRAMES.checkin, cursor),
+      nextFrameId(WEIWEI_FRAMES.desire, cursor),
+      nextFrameId(WEIWEI_FRAMES.actions, cursor),
+    );
+
+    for (const id of candidates) prefetchFrame(id);
+  }, [state.currentView, state.weiweiFrameId, state.flowCursor]);
 
   const getWeiweiHotspots = () => {
     const frameId = state.weiweiFrameId ?? WEIWEI_FRAMES.home[0];
@@ -176,7 +239,7 @@ const App: React.FC = () => {
             popWeiweiFrame();
             return;
           }
-          openWeiweiFrame(WEIWEI_FRAMES.feeling[0], { advanceCursor: true });
+          openWeiweiFrame(WEIWEI_FRAMES.feeling[0]);
         },
       });
     }
@@ -188,7 +251,7 @@ const App: React.FC = () => {
           id: `feeling_${idx + 1}`,
           ariaLabel: `Feeling option ${idx + 1}`,
           ...r,
-          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.breathing, cursor + idx), { advanceCursor: true }),
+          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.breathing, cursor + idx)),
         });
       });
     }
@@ -198,7 +261,7 @@ const App: React.FC = () => {
           id: `desire_${idx + 1}`,
           ariaLabel: `Desire option ${idx + 1}`,
           ...r,
-          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.actions, cursor + idx), { advanceCursor: true }),
+          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.actions, cursor + idx)),
         });
       });
     }
@@ -210,10 +273,10 @@ const App: React.FC = () => {
           ...r,
           onClick: () => {
             if (idx === 0) {
-              openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.breathing, cursor), { advanceCursor: true });
+              openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.breathing, cursor));
               return;
             }
-            openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.checkin, cursor + (idx - 1)), { advanceCursor: true });
+            openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.checkin, cursor + (idx - 1)));
           },
         });
       });
@@ -225,7 +288,7 @@ const App: React.FC = () => {
         id: 'breathing_tap',
         ariaLabel: 'Continue',
         ...ui.breatheTap,
-        onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.checkin, cursor), { advanceCursor: true }),
+        onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.checkin, cursor)),
       });
     }
 
@@ -236,7 +299,7 @@ const App: React.FC = () => {
           id: `ans_${idx + 1}`,
           ariaLabel: `Answer ${idx + 1}`,
           ...r,
-          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.desire, cursor + idx), { advanceCursor: true }),
+          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.desire, cursor + idx)),
         });
       });
     }
@@ -290,7 +353,7 @@ const App: React.FC = () => {
               if (appName === 'Meituan') {
                 navigateTo(AppView.MEITUAN_SHIELD);
               } else if (appName === 'WeiWei') {
-                enterWeiweiAt(WEIWEI_FRAMES.home[0]);
+                enterWeiweiAt(WEIWEI_FRAMES.home[0], { advanceCursor: true });
               }
             }}
           />
