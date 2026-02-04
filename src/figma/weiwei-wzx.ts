@@ -6,7 +6,11 @@ export type FigmaFrameDef = {
   image2xPng: string;
 };
 
-export const WEIWEI_WZX_LOGO_SVG = 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/bbbaddcd-6335-49b8-8346-86b0ca4693b6';
+// Remote URLs are only used for the one-time download script.
+export const WEIWEI_WZX_LOGO_REMOTE = 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/bbbaddcd-6335-49b8-8346-86b0ca4693b6';
+
+// Runtime should use local assets to avoid latency.
+export const WEIWEI_WZX_LOGO_SVG = '/figma/weiwei-wzx/logo.svg';
 
 // Exported from Figma file `weiwei-wzx` (fileKey: q76dE7mXvHodTtGZlKe6xS)
 // Note: these are remote render URLs; suitable for demos.

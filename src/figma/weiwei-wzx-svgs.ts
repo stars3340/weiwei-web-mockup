@@ -1,4 +1,5 @@
-export const WEIWEI_WZX_FRAME_SVGS_BY_ID: Record<string, string> = {
+// Remote URLs (used only to download assets once).
+export const WEIWEI_WZX_FRAME_REMOTE_SVGS_BY_ID: Record<string, string> = {
   '1:2094': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/3545f285-a3c3-441d-a647-3b0d5e8abd83',
   '1:33': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/304ded0f-3579-4694-9add-b470a09bb095',
   '1:178': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/50a27c1b-a86e-4480-99ce-2674e41c722f',
@@ -36,6 +37,18 @@ export const WEIWEI_WZX_FRAME_SVGS_BY_ID: Record<string, string> = {
   '1:2054': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/6b475f91-5be2-4214-8c91-582fe2c0232a',
 };
 
+export function weiweiWzxFrameIdToFileStem(frameId: string): string {
+  return frameId.replace(/:/g, '-');
+}
+
+export function getWeiweiWzxFrameLocalSvg(frameId: string): string {
+  return `/figma/weiwei-wzx/frames/${weiweiWzxFrameIdToFileStem(frameId)}.svg`;
+}
+
+export function getWeiweiWzxFrameRemoteSvg(frameId: string): string | undefined {
+  return WEIWEI_WZX_FRAME_REMOTE_SVGS_BY_ID[frameId];
+}
+
 export function getWeiweiWzxFrameSvg(frameId: string): string | undefined {
-  return WEIWEI_WZX_FRAME_SVGS_BY_ID[frameId];
+  return getWeiweiWzxFrameLocalSvg(frameId);
 }
