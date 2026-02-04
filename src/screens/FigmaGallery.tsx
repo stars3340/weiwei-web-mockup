@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { WEIWEI_WZX_FRAMES } from '../figma/weiwei-wzx';
+import { getWeiweiWzxFrameSvg } from '../figma/weiwei-wzx-svgs';
 
 type Props = {
   onOpenFrame: (frameId: string) => void;
@@ -53,7 +54,12 @@ export default function FigmaGallery({ onOpenFrame, onOpenVideos, onClose }: Pro
               className="text-left rounded-2xl overflow-hidden border border-white/10 hover:border-white/20 bg-white/5 active:scale-[0.99] transition"
             >
               <div className="relative w-full bg-black" style={{ aspectRatio: `${f.width} / ${f.height}` }}>
-                <img alt={f.name} src={f.image2xPng} className="absolute inset-0 w-full h-full" style={{ objectFit: 'contain' }} />
+                <img
+                  alt={f.name}
+                  src={getWeiweiWzxFrameSvg(f.id) ?? f.image2xPng}
+                  className="absolute inset-0 w-full h-full"
+                  style={{ objectFit: 'contain' }}
+                />
               </div>
               <div className="px-3 py-2">
                 <div className="text-sm font-semibold">{f.name}</div>

@@ -1,6 +1,12 @@
 export const WEIWEI_WZX_FRAME_SVGS_BY_ID: Record<string, string> = {
+  '1:2094': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/3545f285-a3c3-441d-a647-3b0d5e8abd83',
   '1:33': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/304ded0f-3579-4694-9add-b470a09bb095',
   '1:178': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/50a27c1b-a86e-4480-99ce-2674e41c722f',
+  '1:1747': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/c2f3d2e1-ef5d-4f16-88e0-9988bbd150c0',
+  '1:1763': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/70f5e206-ed5f-4273-95f3-363a8e9d49a1',
+  '1:2022': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/6c6053bc-eabe-4f8a-a9e7-28c395fb624c',
+  '1:2026': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/d75e3233-f3d9-4678-8aff-ab4f81e72eac',
+  '1:2088': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/c022ca52-98fd-413f-a472-dccca468bc5f',
   '1:1830': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/8f865c64-06c2-49ee-84f6-02e4e4b4f51b',
   '1:1768': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/bb9c0d2f-a85e-49ac-993b-2f021ff9b90a',
   '1:336': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/10700f96-8069-420a-8604-781cf8a886a2',
@@ -27,9 +33,9 @@ export const WEIWEI_WZX_FRAME_SVGS_BY_ID: Record<string, string> = {
   '1:690': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/ca6ba9c5-9e2e-4d9d-9be8-d4b11967d3e0',
   '1:802': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/0bbff2ee-be09-4335-b78d-f43729fec7a0',
   '1:1241': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/9e90d33b-6c72-421c-8e3d-a7d3a28008fa',
+  '1:2054': 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/6b475f91-5be2-4214-8c91-582fe2c0232a',
 };
 
 export function getWeiweiWzxFrameSvg(frameId: string): string | undefined {
   return WEIWEI_WZX_FRAME_SVGS_BY_ID[frameId];
 }
-

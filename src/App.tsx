@@ -192,7 +192,7 @@ const App: React.FC = () => {
         return { key: `FIGMA_FRAME:${f?.id ?? 'unknown'}`, node: (
           <FigmaFrame
             alt={f?.name ?? 'Figma Frame'}
-            src={f?.image2xPng ?? WEIWEI_WZX_FRAMES_BY_ID['1:1768'].image2xPng}
+            src={getWeiweiWzxFrameSvg(f?.id ?? '') ?? f?.image2xPng ?? WEIWEI_WZX_FRAMES_BY_ID['1:1768'].image2xPng}
             designWidth={f?.width ?? 393}
             designHeight={f?.height ?? 852}
             fit={fit}
@@ -241,19 +241,21 @@ const App: React.FC = () => {
         const cursor = state.flowCursor ?? 0;
         const stackLen = (state.weiweiStack ?? []).length;
         return { key: `WEIWEI:${frameId}`, node: (
-          <AnimatePresence mode="wait" initial={false}>
-            <WeiweiNative
-              key={frameId}
-              frameId={frameId}
-              cursor={cursor}
-              stackLen={stackLen}
-              navKind={state.weiweiNavKind ?? 'replace'}
-              onExit={() => navigateTo(AppView.OS_HOME)}
-              onPop={popWeiweiFrame}
-              onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}
-            />
-          </AnimatePresence>
-        ) };
+          <WeiweiNative
+            frameId={frameId}
+            cursor={cursor}
+            stackLen={stackLen}
+            navKind={state.weiweiNavKind ?? 'replace'}
+            onExit={() => navigateTo(AppView.OS_HOME)}
+            onPop={popWeiweiFrame}
+            onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}
+          />
+        ), anim: (() => {
+          const kind = state.weiweiNavKind ?? 'replace';
+          if (kind === 'push') return { type: 'slide' as const, dir: 1 };
+          if (kind === 'pop') return { type: 'slide' as const, dir: -1 };
+          return { type: 'fade' as const, dir: 0 };
+        })() };
       }
       default:
         return { key: 'DEFAULT', node: <HomeScreen onOpenApp={() => {}} /> };
@@ -261,6 +263,24 @@ const App: React.FC = () => {
   };
 
   const view = useMemo(() => renderView(), [state]);
+
+  const viewAnim = view.anim ?? { type: 'fade' as const, dir: 0 };
+
+  const screenVariants = {
+    initial: (custom: { type: 'fade' | 'slide'; dir: number }) => {
+      if (custom.type === 'slide') {
+        return { x: custom.dir > 0 ? 28 : -28, opacity: 0.0 };
+      }
+      return { opacity: 0.0, scale: 0.995 };
+    },
+    animate: { x: 0, opacity: 1, scale: 1 },
+    exit: (custom: { type: 'fade' | 'slide'; dir: number }) => {
+      if (custom.type === 'slide') {
+        return { x: custom.dir > 0 ? -28 : 28, opacity: 0.0 };
+      }
+      return { opacity: 0.0, scale: 1.005 };
+    },
+  } as const;
 
   return (
     <div className="min-h-screen w-full bg-[#111] text-white flex justify-center items-center overflow-hidden py-4 sm:py-8">
@@ -270,10 +290,12 @@ const App: React.FC = () => {
             <motion.div
               key={view.key}
               className="w-full h-full"
-              initial={{ opacity: 0.0, scale: 0.995 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0.0, scale: 1.005 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              custom={viewAnim}
+              variants={screenVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.18, ease: 'easeOut' }}
             >
               {view.node}
             </motion.div>

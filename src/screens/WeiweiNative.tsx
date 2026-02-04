@@ -30,6 +30,8 @@ export default function WeiweiNative({ frameId, cursor, stackLen, onExit, onPop,
   const src = getWeiweiWzxFrameSvg(frameId) ?? WEIWEI_WZX_FRAMES_BY_ID[frameId]?.image2xPng;
 
   const hotspots: Hotspot[] = [];
+  const designWidth = 393;
+  const designHeight = 852;
 
   if (ui.close) {
     hotspots.push({
@@ -176,16 +178,15 @@ export default function WeiweiNative({ frameId, cursor, stackLen, onExit, onPop,
         <div className="absolute inset-0 grid place-items-center text-white/60 text-sm">Missing frame</div>
       )}
 
-      {/* Fallback exit (home frames have no close button) */}
+      {/* Hidden exit hotspot (keeps UI pixel-perfect) */}
       {!ui.close && stackLen <= 1 && (
         <button
           type="button"
           aria-label="Exit"
           onClick={onExit}
-          className="absolute left-4 top-4 w-10 h-10 rounded-full bg-white/10 text-white grid place-items-center active:scale-[0.98] transition"
-        >
-          <span className="material-symbols-outlined text-[22px]">arrow_back</span>
-        </button>
+          className="absolute bg-transparent"
+          style={{ left: 0, top: 0, width: '26%', height: '10%' }}
+        />
       )}
 
       {hotspots.map((h) => (
@@ -195,10 +196,14 @@ export default function WeiweiNative({ frameId, cursor, stackLen, onExit, onPop,
           aria-label={h.ariaLabel}
           onClick={h.onClick}
           className="absolute bg-transparent cursor-pointer"
-          style={{ left: h.x, top: h.y, width: h.w, height: h.h }}
+          style={{
+            left: `${(h.x / designWidth) * 100}%`,
+            top: `${(h.y / designHeight) * 100}%`,
+            width: `${(h.w / designWidth) * 100}%`,
+            height: `${(h.h / designHeight) * 100}%`,
+          }}
         />
       ))}
     </div>
   );
 }
-
