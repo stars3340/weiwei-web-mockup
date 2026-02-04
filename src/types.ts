@@ -24,6 +24,7 @@ export interface AppState {
   weiweiFrameId?: string;
   weiweiStack?: string[];
   flowCursor?: number;
+  weiweiNavKind?: 'push' | 'pop' | 'replace' | 'reset';
 }
 
 export type EmotionType = 'hunger' | 'stress' | 'reward' | 'habit';

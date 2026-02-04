@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, AppView } from './types';
-import FigmaFrame, { type FigmaHotspot } from './screens/FigmaFrame';
+import FigmaFrame from './screens/FigmaFrame';
 import FigmaGallery from './screens/FigmaGallery';
 import DemoVideos from './screens/DemoVideos';
 import HomeScreen from './screens/HomeScreen';
 import ShieldOverlay from './screens/ShieldOverlay';
 import SimulatedApp from './screens/SimulatedApp';
-import { getWeiweiFrameUi } from './figma/hotspots';
+import WeiweiNative from './screens/WeiweiNative';
 import { WEIWEI_WZX_FRAMES_BY_ID } from './figma/weiwei-wzx';
 import { WEIWEI_FRAMES, isFrameInCategory, nextFrameId } from './figma/flow';
 
@@ -21,6 +21,7 @@ const App: React.FC = () => {
     weiweiFrameId: WEIWEI_FRAMES.home[0],
     weiweiStack: [WEIWEI_FRAMES.home[0]],
     flowCursor: 0,
+    weiweiNavKind: 'reset',
   });
 
   const stateRef = useRef(state);
@@ -66,7 +67,15 @@ const App: React.FC = () => {
       }
       const cursor = prev.flowCursor ?? 0;
       const nextCursor = opts?.advanceCursor ? cursor + (opts.cursorStep ?? 1) : cursor;
-      return { ...prev, currentView: AppView.WEIWEI_FIGMA, weiweiFrameId: frameId, weiweiStack: nextStack, flowCursor: nextCursor };
+      const kind = opts?.resetStack ? 'reset' : opts?.replace ? 'replace' : 'push';
+      return {
+        ...prev,
+        currentView: AppView.WEIWEI_FIGMA,
+        weiweiFrameId: frameId,
+        weiweiStack: nextStack,
+        flowCursor: nextCursor,
+        weiweiNavKind: kind,
+      };
     });
   };
 
@@ -80,7 +89,7 @@ const App: React.FC = () => {
       if (stack.length <= 1) return { ...prev, currentView: AppView.OS_HOME };
       stack.pop();
       const frameId = stack[stack.length - 1];
-      return { ...prev, currentView: AppView.WEIWEI_FIGMA, weiweiFrameId: frameId, weiweiStack: stack };
+      return { ...prev, currentView: AppView.WEIWEI_FIGMA, weiweiFrameId: frameId, weiweiStack: stack, weiweiNavKind: 'pop' };
     });
   };
 
@@ -161,162 +170,6 @@ const App: React.FC = () => {
     for (const id of candidates) prefetchFrame(id);
   }, [state.currentView, state.weiweiFrameId, state.flowCursor]);
 
-  const getWeiweiHotspots = () => {
-    const frameId = state.weiweiFrameId ?? WEIWEI_FRAMES.home[0];
-    const cursor = state.flowCursor ?? 0;
-    const stackLen = (state.weiweiStack ?? []).length;
-    const ui = getWeiweiFrameUi(frameId);
-
-    const hotspots: FigmaHotspot[] = [];
-
-    // Close/back (only when it exists in the design)
-    if (ui.close) {
-      hotspots.push({
-        id: 'close',
-        ariaLabel: 'Close',
-        ...ui.close,
-        onClick: () => {
-          if (stackLen <= 1) {
-            navigateTo(AppView.OS_HOME);
-            return;
-          }
-          popWeiweiFrame();
-        },
-      });
-    }
-
-    // Settings (only when the icon exists)
-    if (ui.settings) {
-      hotspots.push({
-        id: 'settings',
-        ariaLabel: 'Guard settings',
-        ...ui.settings,
-        onClick: () => openWeiweiFrame(WEIWEI_FRAMES.guard[0], { replace: true }),
-      });
-    }
-
-    // Bottom tabs (only when the tab bar exists)
-    if (ui.bottomNav) {
-      const segmentW = ui.bottomNav.w / 3;
-      hotspots.push({
-        id: 'tab_trends',
-        ariaLabel: 'Trends',
-        x: ui.bottomNav.x,
-        y: ui.bottomNav.y,
-        w: segmentW,
-        h: ui.bottomNav.h,
-        onClick: () => openWeiweiFrame(WEIWEI_FRAMES.trends[0], { replace: true }),
-      });
-      hotspots.push({
-        id: 'tab_home',
-        ariaLabel: 'Home',
-        x: ui.bottomNav.x + segmentW,
-        y: ui.bottomNav.y,
-        w: segmentW,
-        h: ui.bottomNav.h,
-        onClick: () => openWeiweiFrame(WEIWEI_FRAMES.home[0], { replace: true }),
-      });
-      hotspots.push({
-        id: 'tab_guard',
-        ariaLabel: 'Guard',
-        x: ui.bottomNav.x + segmentW * 2,
-        y: ui.bottomNav.y,
-        w: segmentW,
-        h: ui.bottomNav.h,
-        onClick: () => openWeiweiFrame(WEIWEI_FRAMES.guard[0], { replace: true }),
-      });
-    }
-
-    // Start button (home / stage / guard detail)
-    if (ui.start) {
-      const isGuardDetail = frameId === WEIWEI_FRAMES.guard[1];
-      hotspots.push({
-        id: 'start',
-        ariaLabel: isGuardDetail ? 'Back to guard settings' : 'Start',
-        ...ui.start,
-        onClick: () => {
-          if (isGuardDetail) {
-            popWeiweiFrame();
-            return;
-          }
-          openWeiweiFrame(WEIWEI_FRAMES.feeling[0]);
-        },
-      });
-    }
-
-    // Feeling / Desire / Actions (3 option rows)
-    if (ui.optionRows && isFrameInCategory(frameId, 'feeling')) {
-      ui.optionRows.forEach((r, idx) => {
-        hotspots.push({
-          id: `feeling_${idx + 1}`,
-          ariaLabel: `Feeling option ${idx + 1}`,
-          ...r,
-          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.breathing, cursor + idx)),
-        });
-      });
-    }
-    if (ui.optionRows && isFrameInCategory(frameId, 'desire')) {
-      ui.optionRows.forEach((r, idx) => {
-        hotspots.push({
-          id: `desire_${idx + 1}`,
-          ariaLabel: `Desire option ${idx + 1}`,
-          ...r,
-          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.actions, cursor + idx)),
-        });
-      });
-    }
-    if (ui.optionRows && isFrameInCategory(frameId, 'actions')) {
-      ui.optionRows.forEach((r, idx) => {
-        hotspots.push({
-          id: `action_${idx + 1}`,
-          ariaLabel: `Action option ${idx + 1}`,
-          ...r,
-          onClick: () => {
-            if (idx === 0) {
-              openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.breathing, cursor));
-              return;
-            }
-            openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.checkin, cursor + (idx - 1)));
-          },
-        });
-      });
-    }
-
-    // Breathing tap-to-skip
-    if (ui.breatheTap && isFrameInCategory(frameId, 'breathing')) {
-      hotspots.push({
-        id: 'breathing_tap',
-        ariaLabel: 'Continue',
-        ...ui.breatheTap,
-        onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.checkin, cursor)),
-      });
-    }
-
-    // Check-in answers
-    if (ui.checkinAnswers && isFrameInCategory(frameId, 'checkin')) {
-      ui.checkinAnswers.forEach((r, idx) => {
-        hotspots.push({
-          id: `ans_${idx + 1}`,
-          ariaLabel: `Answer ${idx + 1}`,
-          ...r,
-          onClick: () => openWeiweiFrame(nextFrameId(WEIWEI_FRAMES.desire, cursor + idx)),
-        });
-      });
-    }
-
-    // Guard config -> time detail
-    if (ui.guardTimeRow && frameId === WEIWEI_FRAMES.guard[0]) {
-      hotspots.push({
-        id: 'guard_time',
-        ariaLabel: 'Adjust guard schedule',
-        ...ui.guardTimeRow,
-        onClick: () => openWeiweiFrame(WEIWEI_FRAMES.guard[1]),
-      });
-    }
-
-    return hotspots;
-  };
-
   const renderView = () => {
     switch (state.currentView) {
       case AppView.FIGMA_GALLERY:
@@ -380,16 +233,18 @@ const App: React.FC = () => {
           />
         );
       case AppView.WEIWEI_FIGMA: {
-        const f = state.weiweiFrameId ? WEIWEI_WZX_FRAMES_BY_ID[state.weiweiFrameId] : undefined;
-        const fit = f && (f.width !== 393 || f.height !== 852) ? 'contain' : 'fill';
+        const frameId = state.weiweiFrameId ?? WEIWEI_FRAMES.home[0];
+        const cursor = state.flowCursor ?? 0;
+        const stackLen = (state.weiweiStack ?? []).length;
         return (
-          <FigmaFrame
-            alt={f?.name ?? 'WeiWei'}
-            src={f?.image2xPng ?? WEIWEI_WZX_FRAMES_BY_ID[WEIWEI_FRAMES.home[0]].image2xPng}
-            designWidth={f?.width ?? 393}
-            designHeight={f?.height ?? 852}
-            fit={fit}
-            hotspots={getWeiweiHotspots()}
+          <WeiweiNative
+            frameId={frameId}
+            cursor={cursor}
+            stackLen={stackLen}
+            navKind={state.weiweiNavKind ?? 'replace'}
+            onExit={() => navigateTo(AppView.OS_HOME)}
+            onPop={popWeiweiFrame}
+            onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}
           />
         );
       }
