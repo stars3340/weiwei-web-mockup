@@ -14,6 +14,14 @@ export type WeiweiFrameUi = {
 // NOTE: All rects are in the frame's design coordinate space (393x852).
 // Generated from the local cached Figma file JSON for `weiwei-wzx`.
 export const WEIWEI_WZX_FRAME_UI: Record<string, WeiweiFrameUi> = {
+  // In-app Home (How you feel today?)
+  '1:33': {
+    start: { x: 65, y: 196, w: 263.9, h: 265.6 },
+  },
+  '1:178': {
+    start: { x: 65, y: 196, w: 263.9, h: 265.6 },
+  },
+
   // Home / Dashboard
   '1:1768': {
     close: { x: 55, y: 240, w: 20, h: 20 },
@@ -208,4 +216,3 @@ export const WEIWEI_WZX_FRAME_UI: Record<string, WeiweiFrameUi> = {
 export function getWeiweiFrameUi(frameId: string): WeiweiFrameUi {
   return WEIWEI_WZX_FRAME_UI[frameId] ?? {};
 }
-
