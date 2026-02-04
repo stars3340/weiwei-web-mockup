@@ -1,30 +1,28 @@
 export enum AppView {
+  FIGMA_GALLERY = 'FIGMA_GALLERY',
+  FIGMA_FRAME = 'FIGMA_FRAME',
+
   OS_HOME = 'OS_HOME',
   MEITUAN_SHIELD = 'MEITUAN_SHIELD',
   MEITUAN_APP = 'MEITUAN_APP',
 
-  WEIWEI_HOME = 'WEIWEI_HOME',
-  SESSION_FEELING = 'SESSION_FEELING',
-  SESSION_BREATHING = 'SESSION_BREATHING',
-  SESSION_DESIRE = 'SESSION_DESIRE',
-  SESSION_ACTIONS = 'SESSION_ACTIONS',
-  SESSION_CHECKIN = 'SESSION_CHECKIN',
-
-  TRENDS = 'TRENDS',
-  GUARD_SETTINGS = 'GUARD_SETTINGS',
-
-  FIGMA_GALLERY = 'FIGMA_GALLERY',
-  FIGMA_FRAME = 'FIGMA_FRAME',
+  WEIWEI_FIGMA = 'WEIWEI_FIGMA',
 }
 
 export interface AppState {
   currentView: AppView;
   intensity: 'standard' | 'strict';
+  mode?: 'night' | 'allDay';
   stats: {
     attempts: number;
     returns: number;
+    savedMoney?: number;
   };
+  selectedEmotion?: string;
   figmaFrameId?: string;
+  weiweiFrameId?: string;
+  weiweiStack?: string[];
+  flowCursor?: number;
 }
 
 export type EmotionType = 'hunger' | 'stress' | 'reward' | 'habit';
