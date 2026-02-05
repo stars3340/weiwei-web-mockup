@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { EmotionType } from '../types';
 
 interface Props {
-  onSelectEmotion: (emotion: string) => void;
+  onSelectEmotion: (emotion: EmotionType) => void;
   onBack: () => void;
 }
 
@@ -13,7 +13,7 @@ const EmotionRecognition: React.FC<Props> = ({ onSelectEmotion, onBack }) => {
     { id: 'stress', icon: 'thunderstorm', title: '压力/累', color: 'text-blue-300', bg: 'from-blue-900/40 to-blue-800/10' },
     { id: 'hunger', icon: 'restaurant', title: '真的饿', color: 'text-orange-300', bg: 'from-orange-900/40 to-orange-800/10' },
     { id: 'habit', icon: 'history', title: '惯性手滑', color: 'text-emerald-300', bg: 'from-emerald-900/40 to-emerald-800/10' },
-    { id: 'reward', icon: 'celebration', title: '求安慰', color: 'text-purple-300', bg: 'from-purple-900/40 to-purple-800/10' },
+    { id: 'comfort', icon: 'favorite', title: '想安慰', color: 'text-purple-300', bg: 'from-purple-900/40 to-purple-800/10' },
   ];
 
   return (

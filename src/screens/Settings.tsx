@@ -8,6 +8,30 @@ interface Props {
 }
 
 const Settings: React.FC<Props> = ({ state, onUpdate, onBack }) => {
+  const NIGHT_WINDOW = { startMinutes: 21 * 60 + 30, endMinutes: 1 * 60 + 30 };
+  const ALL_DAY_WINDOW = { startMinutes: 0, endMinutes: 24 * 60 - 1 };
+
+  const sameWindow = (a: { startMinutes: number; endMinutes: number }, b: { startMinutes: number; endMinutes: number }) =>
+    a.startMinutes === b.startMinutes && a.endMinutes === b.endMinutes;
+
+  const selectedPreset: 'night' | 'allDay' | 'custom' = sameWindow(state.guard.window, NIGHT_WINDOW)
+    ? 'night'
+    : sameWindow(state.guard.window, ALL_DAY_WINDOW)
+      ? 'allDay'
+      : 'custom';
+
+  const setWindowPreset = (preset: 'night' | 'allDay') => {
+    const nextWindow = preset === 'night' ? NIGHT_WINDOW : ALL_DAY_WINDOW;
+    onUpdate({
+      guard: {
+        ...state.guard,
+        window: nextWindow,
+        enabled: true,
+        updatedAt: Date.now(),
+      },
+    });
+  };
+
   return (
     <div className="flex flex-col h-full w-full bg-background-dark animate-fade-in">
        {/* Header */}
@@ -19,38 +43,43 @@ const Settings: React.FC<Props> = ({ state, onUpdate, onBack }) => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-2">
-         {/* Mode Section */}
+         {/* Schedule Section */}
          <div className="mb-8">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">守护模式</h3>
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">守护时段</h3>
             <div className="flex flex-col gap-3">
                <button 
-                  onClick={() => onUpdate({ mode: 'night' })}
-                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${state.mode === 'night' ? 'bg-primary/20 border-primary' : 'bg-surface-dark border-white/5'}`}
+                  onClick={() => setWindowPreset('night')}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${selectedPreset === 'night' ? 'bg-primary/20 border-primary' : 'bg-surface-dark border-white/5'}`}
                >
                   <div className="flex items-center gap-3">
                      <span className="material-symbols-outlined text-blue-300">nightlight</span>
                      <div className="text-left">
-                        <p className="text-white font-bold">深夜轻盈</p>
+                        <p className="text-white font-bold">默认</p>
                         <p className="text-xs text-gray-400">21:30 - 01:30</p>
                      </div>
                   </div>
-                  {state.mode === 'night' && <span className="material-symbols-outlined text-primary">check_circle</span>}
+                  {selectedPreset === 'night' && <span className="material-symbols-outlined text-primary">check_circle</span>}
                </button>
 
                <button 
-                  onClick={() => onUpdate({ mode: 'allDay' })}
-                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${state.mode === 'allDay' ? 'bg-primary/20 border-primary' : 'bg-surface-dark border-white/5'}`}
+                  onClick={() => setWindowPreset('allDay')}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${selectedPreset === 'allDay' ? 'bg-primary/20 border-primary' : 'bg-surface-dark border-white/5'}`}
                >
                   <div className="flex items-center gap-3">
                      <span className="material-symbols-outlined text-gray-300">schedule</span>
                      <div className="text-left">
-                        <p className="text-white font-bold">全天戒断</p>
-                        <p className="text-xs text-gray-400">24 小时</p>
+                        <p className="text-white font-bold">全天</p>
+                        <p className="text-xs text-gray-400">00:00 - 23:59</p>
                      </div>
                   </div>
-                  {state.mode === 'allDay' && <span className="material-symbols-outlined text-primary">check_circle</span>}
+                  {selectedPreset === 'allDay' && <span className="material-symbols-outlined text-primary">check_circle</span>}
                </button>
             </div>
+            {selectedPreset === 'custom' && (
+              <div className="mt-3 text-xs text-gray-500">
+                当前为自定义时段（Web demo 暂不支持精细调节）。
+              </div>
+            )}
          </div>
 
          {/* Intensity Section */}
@@ -58,27 +87,27 @@ const Settings: React.FC<Props> = ({ state, onUpdate, onBack }) => {
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">拦截力度</h3>
             <div className="flex flex-col gap-3">
                <button 
-                  onClick={() => onUpdate({ intensity: 'standard' })}
-                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${state.intensity === 'standard' ? 'bg-primary/20 border-primary' : 'bg-surface-dark border-white/5'}`}
+                  onClick={() => onUpdate({ guard: { ...state.guard, intensity: 'standard', updatedAt: Date.now() } })}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${state.guard.intensity === 'standard' ? 'bg-primary/20 border-primary' : 'bg-surface-dark border-white/5'}`}
                >
                   <div className="text-left">
                      <p className="text-white font-bold">温柔提醒 (标准)</p>
-                     <p className="text-xs text-gray-400 mt-1">允许“我非要吃”的选项</p>
+                     <p className="text-xs text-gray-400 mt-1">可继续，但需要先完成动作门槛</p>
                   </div>
-                  {state.intensity === 'standard' && <span className="material-symbols-outlined text-primary">radio_button_checked</span>}
-                  {state.intensity !== 'standard' && <span className="material-symbols-outlined text-gray-600">radio_button_unchecked</span>}
+                  {state.guard.intensity === 'standard' && <span className="material-symbols-outlined text-primary">radio_button_checked</span>}
+                  {state.guard.intensity !== 'standard' && <span className="material-symbols-outlined text-gray-600">radio_button_unchecked</span>}
                </button>
 
                <button 
-                  onClick={() => onUpdate({ intensity: 'strict' })}
-                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${state.intensity === 'strict' ? 'bg-primary/20 border-primary' : 'bg-surface-dark border-white/5'}`}
+                  onClick={() => onUpdate({ guard: { ...state.guard, intensity: 'strict', updatedAt: Date.now() } })}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${state.guard.intensity === 'strict' ? 'bg-primary/20 border-primary' : 'bg-surface-dark border-white/5'}`}
                >
                   <div className="text-left">
                      <p className="text-white font-bold">强制阻断 (强力)</p>
-                     <p className="text-xs text-gray-400 mt-1">没有忽略按钮</p>
+                     <p className="text-xs text-gray-400 mt-1">不提供继续按钮</p>
                   </div>
-                  {state.intensity === 'strict' && <span className="material-symbols-outlined text-primary">radio_button_checked</span>}
-                  {state.intensity !== 'strict' && <span className="material-symbols-outlined text-gray-600">radio_button_unchecked</span>}
+                  {state.guard.intensity === 'strict' && <span className="material-symbols-outlined text-primary">radio_button_checked</span>}
+                  {state.guard.intensity !== 'strict' && <span className="material-symbols-outlined text-gray-600">radio_button_unchecked</span>}
                </button>
             </div>
          </div>

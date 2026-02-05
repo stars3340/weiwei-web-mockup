@@ -10,10 +10,41 @@ export enum AppView {
   WEIWEI_APP = 'WEIWEI_APP',
 }
 
+export type GuardIntensity = 'standard' | 'strict';
+
+export type ActionType = 'breathing' | 'delay' | 'challenge';
+
+export type EmotionType = 'stress' | 'hunger' | 'habit' | 'comfort';
+
+export interface GuardWindow {
+  startMinutes: number; // 0...1439
+  endMinutes: number; // 0...1439
+}
+
+export interface GuardConfig {
+  enabled: boolean;
+  intensity: GuardIntensity;
+  window: GuardWindow;
+  minActionSeconds: number;
+  updatedAt: number; // epoch ms
+}
+
+export interface GateTicket {
+  id: string;
+  issuedAt: number; // epoch ms
+  validUntil: number; // epoch ms
+  consumed: boolean;
+  minActionSeconds: number;
+}
+
+export interface PendingGateRequest {
+  requestedAt: number; // epoch ms
+  requiredSeconds: number;
+}
+
 export interface AppState {
   currentView: AppView;
-  intensity: 'standard' | 'strict';
-  mode?: 'night' | 'allDay';
+  guard: GuardConfig;
   stats: {
     attempts: number;
     returns: number;
@@ -21,10 +52,7 @@ export interface AppState {
   };
   selectedEmotion?: EmotionType;
   figmaFrameId?: string;
-  weiweiFrameId?: string;
-  weiweiStack?: string[];
-  flowCursor?: number;
-  weiweiNavKind?: 'push' | 'pop' | 'replace' | 'reset';
+  weiweiLaunchMode?: 'intercepted' | 'selfInitiated';
+  gateTicket?: GateTicket;
+  pendingGateRequest?: PendingGateRequest;
 }
-
-export type EmotionType = 'hunger' | 'stress' | 'reward' | 'habit';

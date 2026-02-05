@@ -43,13 +43,13 @@ const ActionSuggestion: React.FC<Props> = ({ emotion, onActionSelect, onSurrende
       primaryAction: { label: '2分钟呼吸解压 (很有效)', id: 'breathing', icon: 'air' },
       secondaryAction: { label: '去洗个热水澡', id: 'delay', icon: 'shower' }
     },
-    reward: {
-      icon: 'redeem',
+    comfort: {
+      icon: 'favorite',
       color: 'text-purple-400',
-      title: '快乐不只有“吃”这一种',
-      desc: '多巴胺可以通过很多方式获得。不要让“奖励”变成身体的“惩罚”。',
-      primaryAction: { label: '做个拉伸 / 听首喜欢的歌', id: 'wishlist' },
-      secondaryAction: { label: '只吃一小口 (定个量)', id: 'small_portion' }
+      title: '安慰不只有“吃”这一种',
+      desc: '难受的时候，想要被安慰很正常。我们先用更温和的方式，给自己一点照顾。',
+      primaryAction: { label: '听首喜欢的歌 / 拉伸 2 分钟', id: 'comfort' },
+      secondaryAction: { label: '先等 2 分钟再决定', id: 'delay', icon: 'timer' }
     },
     habit: {
       icon: 'touch_app',

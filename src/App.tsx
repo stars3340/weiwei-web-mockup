@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppState, AppView } from './types';
 import FigmaFrame from './screens/FigmaFrame';
@@ -8,72 +8,27 @@ import HomeScreen from './screens/HomeScreen';
 import ShieldOverlay from './screens/ShieldOverlay';
 import SimulatedApp from './screens/SimulatedApp';
 import WeiweiApp from './screens/WeiweiApp';
-import { WEIWEI_WZX_FRAMES_BY_ID } from './figma/weiwei-wzx';
 import { getWeiweiWzxFrameSvg } from './figma/weiwei-wzx-svgs';
-import { WEIWEI_FRAMES, nextFrameId } from './figma/flow';
+import { WEIWEI_WZX_FRAMES_BY_ID } from './figma/weiwei-wzx';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
     currentView: AppView.OS_HOME,
-    intensity: 'standard',
+    guard: {
+      enabled: false,
+      intensity: 'standard',
+      window: { startMinutes: 21 * 60 + 30, endMinutes: 1 * 60 + 30 },
+      minActionSeconds: 90,
+      updatedAt: Date.now(),
+    },
     stats: {
       attempts: 3,
       returns: 3,
     },
-    weiweiFrameId: WEIWEI_FRAMES.home[0],
-    weiweiStack: [WEIWEI_FRAMES.home[0]],
-    flowCursor: 0,
-    weiweiNavKind: 'reset',
   });
-  const [debugOverlay, setDebugOverlay] = useState(false);
 
   const navigateTo = (view: AppView) => setState((prev) => ({ ...prev, currentView: view }));
   const updateState = (updates: Partial<AppState>) => setState((prev) => ({ ...prev, ...updates }));
-
-  const lastNavAtRef = useRef(0);
-
-  const openWeiweiFrame = (
-    frameId: string,
-    opts?: { replace?: boolean; resetStack?: boolean; advanceCursor?: boolean; cursorStep?: number },
-  ) => {
-    const now = performance.now();
-    if (now - lastNavAtRef.current < 90) return;
-    lastNavAtRef.current = now;
-    setState((prev) => {
-      const nextStack = opts?.resetStack ? [] : [...(prev.weiweiStack ?? [])];
-      if (opts?.replace) {
-        if (nextStack.length > 0) nextStack[nextStack.length - 1] = frameId;
-        else nextStack.push(frameId);
-      } else {
-        nextStack.push(frameId);
-      }
-      const cursor = prev.flowCursor ?? 0;
-      const nextCursor = opts?.advanceCursor ? cursor + (opts.cursorStep ?? 1) : cursor;
-      const kind = opts?.resetStack ? 'reset' : opts?.replace ? 'replace' : 'push';
-      return {
-        ...prev,
-        currentView: AppView.WEIWEI_APP,
-        weiweiFrameId: frameId,
-        weiweiStack: nextStack,
-        flowCursor: nextCursor,
-        weiweiNavKind: kind,
-      };
-    });
-  };
-
-  const enterWeiweiAt = (frameId: string, opts?: { advanceCursor?: boolean; cursorStep?: number }) => {
-    openWeiweiFrame(frameId, { resetStack: true, advanceCursor: opts?.advanceCursor, cursorStep: opts?.cursorStep });
-  };
-
-  const popWeiweiFrame = () => {
-    setState((prev) => {
-      const stack = [...(prev.weiweiStack ?? [])];
-      if (stack.length <= 1) return { ...prev, currentView: AppView.OS_HOME };
-      stack.pop();
-      const frameId = stack[stack.length - 1];
-      return { ...prev, currentView: AppView.WEIWEI_APP, weiweiFrameId: frameId, weiweiStack: stack, weiweiNavKind: 'pop' };
-    });
-  };
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -83,10 +38,6 @@ const App: React.FC = () => {
       }
       if (e.key.toLowerCase() === 'v') {
         setState((prev) => ({ ...prev, currentView: AppView.DEMO_VIDEOS }));
-        return;
-      }
-      if (e.key.toLowerCase() === 'd') {
-        setDebugOverlay((v) => !v);
         return;
       }
       if (e.key === 'Escape') {
@@ -134,9 +85,10 @@ const App: React.FC = () => {
             onOpenGallery={() => navigateTo(AppView.FIGMA_GALLERY)}
             onOpenApp={(appName) => {
               if (appName === 'Meituan') {
-                navigateTo(AppView.MEITUAN_SHIELD);
+                if (state.guard.enabled) navigateTo(AppView.MEITUAN_SHIELD);
+                else navigateTo(AppView.MEITUAN_APP);
               } else if (appName === 'WeiWei') {
-                enterWeiweiAt(WEIWEI_FRAMES.home[0], { advanceCursor: true });
+                updateState({ currentView: AppView.WEIWEI_APP, weiweiLaunchMode: undefined });
               }
             }}
           />
@@ -144,10 +96,13 @@ const App: React.FC = () => {
       case AppView.MEITUAN_SHIELD:
         return { key: 'MEITUAN_SHIELD', node: (
           <ShieldOverlay 
-            intensity={state.intensity}
+            intensity={state.guard.intensity}
             onReturnToFocus={() => {
-              updateState({ stats: { ...state.stats, returns: state.stats.returns + 1 } });
-              enterWeiweiAt(nextFrameId(WEIWEI_FRAMES.stage, (state.flowCursor ?? 0) + 1), { advanceCursor: true });
+              updateState({
+                stats: { ...state.stats, returns: state.stats.returns + 1 },
+                currentView: AppView.WEIWEI_APP,
+                weiweiLaunchMode: 'intercepted',
+              });
             }}
             onIgnore={() => {
               updateState({ stats: { ...state.stats, attempts: state.stats.attempts + 1 } });
@@ -158,30 +113,24 @@ const App: React.FC = () => {
       case AppView.MEITUAN_APP:
         return { key: 'MEITUAN_APP', node: (
           <SimulatedApp 
-            onBackToSafety={() => enterWeiweiAt(nextFrameId(WEIWEI_FRAMES.stage, (state.flowCursor ?? 0) + 1), { advanceCursor: true })}
+            onBackToSafety={() => updateState({ currentView: AppView.WEIWEI_APP, weiweiLaunchMode: 'intercepted' })}
             onHome={() => navigateTo(AppView.OS_HOME)}
           />
         ) };
-      case AppView.WEIWEI_APP: {
-        const frameId = state.weiweiFrameId ?? WEIWEI_FRAMES.home[0];
-        const cursor = state.flowCursor ?? 0;
-        const stackLen = (state.weiweiStack ?? []).length;
+      case AppView.WEIWEI_APP:
         return { key: 'WEIWEI', node: (
           <WeiweiApp
-            frameId={frameId}
-            cursor={cursor}
-            stackLen={stackLen}
-            navKind={state.weiweiNavKind ?? 'replace'}
-            stats={state.stats}
-            selectedEmotion={state.selectedEmotion}
-            onSetEmotion={(emotion) => updateState({ selectedEmotion: emotion })}
+            state={state}
+            onUpdate={updateState}
             onExit={() => navigateTo(AppView.OS_HOME)}
-            onPop={popWeiweiFrame}
-            onOpen={(id, opts) => openWeiweiFrame(id, { replace: opts?.replace })}
-            debugOverlay={debugOverlay}
+            onProceedToTargetApp={() => {
+              updateState({
+                currentView: AppView.MEITUAN_APP,
+                stats: { ...state.stats, attempts: state.stats.attempts + 1 },
+              });
+            }}
           />
         ) };
-      }
       default:
         return { key: 'DEFAULT', node: <HomeScreen onOpenApp={() => {}} /> };
     }

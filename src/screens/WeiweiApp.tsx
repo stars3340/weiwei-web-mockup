@@ -1,584 +1,711 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { isFrameInCategory, WEIWEI_FRAMES } from '../figma/flow';
-import { EmotionType } from '../types';
-import ActionSuggestion from './ActionSuggestion';
-import Breathing from './Breathing';
-import FocusDashboard from './FocusDashboard';
+import type { AppState, EmotionType, GuardIntensity } from '../types';
+import DailyReview from './DailyReview';
+import EmotionRecognition from './EmotionRecognition';
+import Settings from './Settings';
 import WeeklyReview from './WeeklyReview';
 
-type NavKind = 'push' | 'pop' | 'replace' | 'reset';
+type TabKey = 'review' | 'home' | 'setup';
+type SessionMode = 'intercepted' | 'selfInitiated';
+type SessionStep = 'action' | 'reflection' | 'result' | 'delay' | 'proceedInfo';
 
 type Props = {
-  frameId: string;
-  cursor: number;
-  navKind: NavKind;
-  stackLen: number;
-  stats: { attempts: number; returns: number };
-  selectedEmotion?: EmotionType;
-  onSetEmotion: (emotion: EmotionType) => void;
+  state: AppState;
+  onUpdate: (updates: Partial<AppState>) => void;
   onExit: () => void;
-  onPop: () => void;
-  onOpen: (frameId: string, opts?: { replace?: boolean }) => void;
-  debugOverlay?: boolean;
+  onProceedToTargetApp: () => void;
 };
 
-const DW = 393;
-const DH = 852;
-const pct = (v: number, base: number) => `${(v / base) * 100}%`;
-const rect = (x: number, y: number, w: number, h: number) => ({
-  left: pct(x, DW),
-  top: pct(y, DH),
-  width: pct(w, DW),
-  height: pct(h, DH),
-});
+const STRINGS = {
+  stageStatusActive: '守护中',
+  stageStatusNotEnabled: '未守护',
+  stageBubbleDefault: '冲动很正常，我们先慢下来。',
+  sessionPauseTitle: '先停一下',
+  sessionReflectionTitle: '可选复盘',
+  sessionResultTitle: '现在决定',
+  sessionDelayTitle: '延迟 2 分钟',
+  sessionProceedInfoTitle: '好的',
+  bubbleWaitToZero: '只要等到 0。',
+  bubbleReflection: '可选：选一下会更清楚。',
+  bubbleProceedSafe: '好的。也请温和一点。',
+  bubbleProceedGate: '如果你仍想继续，需要先完成门槛。',
+  proceedInfoDetailSafeDefault: '回到刚才的 App，再点一次“继续”。这次会放行一次。',
+  proceedInfoDetailGateNeeded: (seconds: number) => `要继续进入刚才的 App，需要先完成 ${seconds} 秒门槛动作。`,
+} as const;
 
-function HomeFigma({ onStart, debugOverlay, frameId }: { onStart: () => void; debugOverlay?: boolean; frameId: string }) {
-  return (
-    <div className="relative w-full h-full overflow-hidden bg-[#101010] text-white">
-      {/* Ambient blobs (from Figma frame 1:33) */}
-      <div className="absolute rounded-full blur-[300px]" style={{ ...rect(-80, 485, 554, 443), background: '#9D37D4', opacity: 0.30 }} />
-      <div className="absolute rounded-full blur-[300px]" style={{ ...rect(-80, 519, 554, 443), background: '#5337DE', opacity: 0.40 }} />
-      <div className="absolute rounded-full blur-[300px]" style={{ ...rect(-51, 650, 496, 326), background: '#B237DE', opacity: 0.20 }} />
-      <div className="absolute rounded-full blur-[300px]" style={{ ...rect(-51, -230, 496, 326), background: '#374DDE', opacity: 0.20 }} />
-
-      {/* Avatar + greeting */}
-      <button
-        type="button"
-        className="absolute rounded-full border-0 p-0 bg-transparent"
-        style={{ ...rect(29, 44, 54, 54), touchAction: 'manipulation' }}
-        aria-label="Profile"
-      >
-        <div className="absolute inset-0 rounded-full" style={{ background: '#E1FCFF' }} />
-        <img
-          alt="Avatar"
-          src="/figma/weiwei-wzx/ui/avatar.png"
-          className="absolute inset-0 w-full h-full rounded-full"
-          style={{ objectFit: 'cover' }}
-          draggable={false}
-          decoding="async"
-          loading="eager"
-        />
-      </button>
-      <div
-        className="absolute"
-        style={{
-          ...rect(102, 58, 200, 26),
-          fontFamily: '"Plus Jakarta Sans","Manrope","Noto Sans SC",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
-          fontWeight: 600,
-          fontSize: 20,
-          lineHeight: '25px',
-        }}
-      >
-        Hi! Lilian
-      </div>
-
-      {/* Small pill (How you feel today?) */}
-      <div
-        className="absolute rounded-[22px] backdrop-blur-xl"
-        style={{ ...rect(128, 117, 222, 79), background: 'rgba(252,252,252,0.70)' }}
-      />
-      <div
-        className="absolute"
-        style={{
-          ...rect(165, 147, 200, 20),
-          fontFamily: '"Inria Serif","Noto Sans SC",serif',
-          fontWeight: 700,
-          fontSize: 16,
-          lineHeight: '19px',
-          color: '#000',
-        }}
-      >
-        How you feel today?
-      </div>
-
-      {/* Monster (tap to start) */}
-      <button
-        type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          onStart();
-        }}
-        className="absolute border-0 bg-transparent p-0 active:scale-[0.99] transition-transform"
-        style={{ ...rect(65, 196, 263.93, 265.58), touchAction: 'manipulation' }}
-        aria-label="Start"
-      >
-        <img
-          alt="Monster"
-          src="/figma/weiwei-wzx/ui/monster_home.png"
-          className="absolute inset-0 w-full h-full"
-          style={{ objectFit: 'cover', opacity: 0.90 }}
-          draggable={false}
-          decoding="async"
-          loading="eager"
-        />
-      </button>
-      <div className="absolute rounded-full" style={{ ...rect(74.9, 433.53, 243.31, 35.47), background: 'rgba(0,0,0,0.25)' }} />
-      <div className="absolute rounded-full" style={{ ...rect(109.54, 433.53, 192.17, 28.04), background: 'rgba(0,0,0,0.25)' }} />
-
-      {/* Mood hint */}
-      <div
-        className="absolute"
-        style={{
-          ...rect(144, 672, 200, 20),
-          fontFamily: '"Inria Serif","Noto Sans SC",serif',
-          fontWeight: 700,
-          fontSize: 16,
-          lineHeight: '19px',
-          color: '#fff',
-        }}
-      >
-        Feeling low ...
-      </div>
-
-      {/* Bottom nav (Home / SOS / User) */}
-      <div
-        className="absolute rounded-[27px] backdrop-blur-xl"
-        style={{ ...rect(93, 744, 198, 54), background: 'rgba(255,255,255,0.60)' }}
-      />
-      <button
-        type="button"
-        className="absolute grid place-items-center text-[#1D2547] active:scale-[0.98]"
-        style={{ ...rect(121, 761, 20, 20), touchAction: 'manipulation' }}
-        aria-label="Home"
-      >
-        <img alt="" src="/figma/weiwei-wzx/ui/home_outlined.svg" className="w-[21px] h-[20px]" draggable={false} />
-      </button>
-      <button
-        type="button"
-        className="absolute grid place-items-center text-[#1D2547] active:scale-[0.98]"
-        style={{ ...rect(243, 761, 20, 20), touchAction: 'manipulation' }}
-        aria-label="User"
-      >
-        <img alt="" src="/figma/weiwei-wzx/ui/user_outlined.svg" className="w-[17px] h-[18px]" draggable={false} />
-      </button>
-      <button
-        type="button"
-        className="absolute rounded-full active:scale-[0.98] transition-transform"
-        style={{ ...rect(165, 744, 54, 54), background: '#F5A6FE', touchAction: 'manipulation' }}
-        aria-label="SOS"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          onStart();
-        }}
-      >
-        <div className="absolute inset-[3px] rounded-full bg-black/90" />
-        <div
-          className="absolute inset-0 grid place-items-center text-white"
-          style={{
-            fontFamily: 'ui-rounded,"Arial Rounded MT Bold","Avenir Next","SF Pro Rounded","Noto Sans SC",system-ui,sans-serif',
-            fontWeight: 700,
-            fontSize: 16,
-            lineHeight: '19px',
-          }}
-        >
-          SOS
-        </div>
-      </button>
-
-      {debugOverlay && (
-        <img
-          alt=""
-          src={`/figma/weiwei-wzx/frames/${frameId.replace(/:/g, '-')}.svg`}
-          className="absolute inset-0 w-full h-full pointer-events-none select-none"
-          style={{ opacity: 0.35, mixBlendMode: 'difference' }}
-          draggable={false}
-        />
-      )}
-    </div>
-  );
+function clampInt(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Math.trunc(n)));
 }
 
-function CheckInScreen({ onPick, onBack }: { onPick: (idx: number) => void; onBack: () => void }) {
-  const options = ['我很难受', '还好但想吃', '其实没那么饿'];
-  return (
-    <div className="flex flex-col h-full w-full bg-background-dark text-white animate-fade-in relative overflow-hidden">
-      <header className="flex items-center justify-between p-6 z-20 shrink-0">
-        <button
-          type="button"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            onBack();
-          }}
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-surface-dark border border-white/5 text-gray-300 active:scale-[0.98]"
-          style={{ touchAction: 'manipulation' }}
-        >
-          <span className="material-symbols-outlined text-[20px]">arrow_back_ios_new</span>
-        </button>
-        <div className="w-10" />
-      </header>
-
-      <main className="flex-1 flex flex-col px-6 pb-10">
-        <h1 className="text-3xl font-extrabold leading-tight">先确认一下：</h1>
-        <p className="mt-2 text-white/50 text-base">你现在的身体状态更接近哪一种？</p>
-
-        <div className="mt-8 flex flex-col gap-3">
-          {options.map((label, idx) => (
-            <button
-              key={label}
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                onPick(idx);
-              }}
-              className="w-full h-[54px] rounded-2xl bg-surface-dark border border-white/5 text-left px-5 font-semibold active:scale-[0.98] transition-transform"
-              style={{ touchAction: 'manipulation' }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function DesireScreen({ onPick, onBack }: { onPick: (idx: number) => void; onBack: () => void }) {
-  const options = ['想要安慰', '想要放松', '想要奖励'];
-  return (
-    <div className="flex flex-col h-full w-full bg-background-dark text-white animate-fade-in relative overflow-hidden">
-      <header className="flex items-center justify-between p-6 z-20 shrink-0">
-        <button
-          type="button"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            onBack();
-          }}
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-surface-dark border border-white/5 text-gray-300 active:scale-[0.98]"
-          style={{ touchAction: 'manipulation' }}
-        >
-          <span className="material-symbols-outlined text-[20px]">arrow_back_ios_new</span>
-        </button>
-        <div className="w-10" />
-      </header>
-
-      <main className="flex-1 flex flex-col px-6 pb-10">
-        <h1 className="text-3xl font-extrabold leading-tight">你真正想要的是？</h1>
-        <p className="mt-2 text-white/50 text-base">把“想吃”翻译成更准确的需求。</p>
-
-        <div className="mt-8 flex flex-col gap-3">
-          {options.map((label, idx) => (
-            <button
-              key={label}
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                onPick(idx);
-              }}
-              className="w-full h-[54px] rounded-2xl bg-surface-dark border border-white/5 text-left px-5 font-semibold active:scale-[0.98] transition-transform"
-              style={{ touchAction: 'manipulation' }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function FeelingFigma({
-  onPick,
-  onSettings,
-  debugOverlay,
-  frameId,
+function SessionAction({
+  requiredSeconds,
+  onClose,
+  onComplete,
 }: {
-  onPick: (choice: 0 | 1 | 2) => void;
-  onSettings: () => void;
-  debugOverlay?: boolean;
-  frameId: string;
+  requiredSeconds: number;
+  onClose: () => void;
+  onComplete: () => void;
 }) {
+  const secondsTotal = clampInt(requiredSeconds, 5, 180);
+  const [remaining, setRemaining] = useState(secondsTotal);
+  const [phase, setPhase] = useState<'inhale' | 'exhale'>('inhale');
+  const [phaseRemaining, setPhaseRemaining] = useState(4);
+  const completedRef = useRef(false);
+
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      setRemaining((prev) => {
+        const next = prev - 1;
+        if (next <= 0) {
+          if (!completedRef.current) {
+            completedRef.current = true;
+            window.clearInterval(t);
+            onComplete();
+          }
+          return 0;
+        }
+        return next;
+      });
+
+      setPhaseRemaining((prev) => {
+        const next = prev - 1;
+        if (next <= 0) {
+          setPhase((p) => (p === 'inhale' ? 'exhale' : 'inhale'));
+          return 4;
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(t);
+  }, [onComplete]);
+
+  const guidance = phase === 'inhale' ? `吸气 ${phaseRemaining}s` : `呼气 ${phaseRemaining}s`;
+  const progress = 1 - remaining / secondsTotal;
+
+  return (
+    <div className="flex flex-col h-full w-full bg-[#0A0A0C] text-white overflow-hidden">
+      <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
+          className="text-white/40 hover:text-white/70 p-2 rounded-full hover:bg-white/5 active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
+          aria-label="Close"
+        >
+          <span className="material-symbols-outlined !text-[22px]">close</span>
+        </button>
+
+        <div className="text-xs font-bold tracking-[0.18em] uppercase text-white/50">{STRINGS.sessionPauseTitle}</div>
+
+        <div className="text-xs font-semibold text-white/50 tabular-nums">{remaining}s</div>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
+        <div className="relative w-64 h-64 flex items-center justify-center mb-10 select-none">
+          <div className="absolute inset-0 rounded-full bg-[#1754cf]/10 blur-3xl" />
+          <div
+            className="absolute inset-10 rounded-full border border-[#1754cf]/25 transition-transform duration-1000 ease-in-out"
+            style={{ transform: `scale(${phase === 'inhale' ? 1.08 : 0.86})` }}
+          />
+          <div className="absolute inset-[82px] rounded-full bg-gradient-to-br from-[#1754cf]/35 to-[#1754cf]/10 border border-white/5 shadow-[0_0_60px_rgba(23,84,207,0.24)]" />
+
+          <svg className="absolute inset-0" viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r="46" stroke="rgba(255,255,255,0.08)" strokeWidth="4" fill="none" />
+            <circle
+              cx="50"
+              cy="50"
+              r="46"
+              stroke="rgba(23,84,207,0.9)"
+              strokeWidth="4"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={`${(progress * 2 * Math.PI * 46).toFixed(2)} ${(2 * Math.PI * 46).toFixed(2)}`}
+              transform="rotate(-90 50 50)"
+            />
+          </svg>
+
+          <div className="relative z-10 text-center">
+            <div className="text-5xl font-extrabold tabular-nums">{remaining}</div>
+            <div className="mt-1 text-xs font-semibold text-white/45 tracking-widest">{STRINGS.bubbleWaitToZero}</div>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <div className="text-white/85 text-lg font-light tracking-[0.14em]">{guidance}</div>
+          <div className="mt-2 text-white/35 text-xs font-medium tracking-wider">只要跟着呼吸就好。</div>
+        </div>
+      </div>
+
+      <div className="px-6 pb-8 shrink-0">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onComplete();
+          }}
+          className="w-full h-12 rounded-xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
+        >
+          我完成了，下一步
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SessionResult({
+  mode,
+  intensity,
+  requiredSeconds,
+  didCompleteAction,
+  onBack,
+  onDelay,
+  onProceed,
+  onClose,
+}: {
+  mode: SessionMode;
+  intensity: GuardIntensity;
+  requiredSeconds: number;
+  didCompleteAction: boolean;
+  onBack: () => void;
+  onDelay: () => void;
+  onProceed: () => void;
+  onClose: () => void;
+}) {
+  const proceedDisabled = mode === 'intercepted' && intensity !== 'standard';
+  const proceedNeedsAction = mode === 'intercepted' && !didCompleteAction;
+
+  return (
+    <div className="flex flex-col h-full w-full bg-[#0A0A0C] text-white overflow-hidden">
+      <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
+          className="text-white/40 hover:text-white/70 p-2 rounded-full hover:bg-white/5 active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
+          aria-label="Close"
+        >
+          <span className="material-symbols-outlined !text-[22px]">close</span>
+        </button>
+        <div className="text-xs font-bold tracking-[0.18em] uppercase text-white/50">{STRINGS.sessionResultTitle}</div>
+        <div className="w-9" />
+      </div>
+
+      <div className="flex-1 flex flex-col justify-center px-6">
+        <div className="text-center mb-8">
+          <div className="text-2xl font-extrabold leading-tight">你想怎么做？</div>
+          <div className="mt-2 text-sm text-white/45">
+            {mode === 'intercepted' ? '这是一次系统拦截后的选择。' : '这是一次自助会话。'}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onBack();
+            }}
+            className="w-full h-14 rounded-xl bg-[#1754cf] hover:bg-[#1347b1] transition active:scale-[0.98] font-bold"
+            style={{ touchAction: 'manipulation' }}
+          >
+            回头（不吃了）
+          </button>
+
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onDelay();
+            }}
+            className="w-full h-14 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition active:scale-[0.98] font-bold"
+            style={{ touchAction: 'manipulation' }}
+          >
+            {STRINGS.sessionDelayTitle}
+          </button>
+
+          <button
+            type="button"
+            disabled={proceedDisabled || proceedNeedsAction}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              if (proceedDisabled || proceedNeedsAction) return;
+              onProceed();
+            }}
+            className={[
+              'w-full h-14 rounded-xl font-bold transition active:scale-[0.98]',
+              proceedDisabled || proceedNeedsAction
+                ? 'bg-white/5 border border-white/10 text-white/30 opacity-60 cursor-not-allowed'
+                : 'bg-white/10 hover:bg-white/15 text-white',
+            ].join(' ')}
+            style={{ touchAction: 'manipulation' }}
+          >
+            继续
+          </button>
+
+          {(proceedDisabled || proceedNeedsAction) && (
+            <div className="text-xs text-white/35 leading-relaxed">
+              {proceedDisabled
+                ? '当前为强力拦截：不提供继续按钮。'
+                : STRINGS.proceedInfoDetailGateNeeded(requiredSeconds)}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SessionDelay({
+  seconds = 120,
+  onBackToResult,
+  onClose,
+}: {
+  seconds?: number;
+  onBackToResult: () => void;
+  onClose: () => void;
+}) {
+  const [remaining, setRemaining] = useState(() => clampInt(seconds, 5, 600));
+
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(t);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    if (remaining <= 0) onBackToResult();
+  }, [onBackToResult, remaining]);
+
+  return (
+    <div className="flex flex-col h-full w-full bg-[#0A0A0C] text-white overflow-hidden">
+      <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
+          className="text-white/40 hover:text-white/70 p-2 rounded-full hover:bg-white/5 active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
+          aria-label="Close"
+        >
+          <span className="material-symbols-outlined !text-[22px]">close</span>
+        </button>
+        <div className="text-xs font-bold tracking-[0.18em] uppercase text-white/50">{STRINGS.sessionDelayTitle}</div>
+        <div className="w-9" />
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <div className="text-6xl font-extrabold tabular-nums">{remaining}s</div>
+        <div className="mt-3 text-sm text-white/45">再等一会儿也算赢。</div>
+      </div>
+
+      <div className="px-6 pb-8 shrink-0">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onBackToResult();
+          }}
+          className="w-full h-12 rounded-xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
+        >
+          我决定好了
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ProceedInfo({
+  mode,
+  didCompleteAction,
+  requiredSeconds,
+  onGoToTargetApp,
+  onClose,
+}: {
+  mode: SessionMode;
+  didCompleteAction: boolean;
+  requiredSeconds: number;
+  onGoToTargetApp: () => void;
+  onClose: () => void;
+}) {
+  const detail =
+    mode === 'intercepted'
+      ? didCompleteAction
+        ? STRINGS.proceedInfoDetailSafeDefault
+        : STRINGS.proceedInfoDetailGateNeeded(requiredSeconds)
+      : STRINGS.bubbleProceedSafe;
+
+  return (
+    <div className="flex flex-col h-full w-full bg-[#0A0A0C] text-white overflow-hidden">
+      <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
+          className="text-white/40 hover:text-white/70 p-2 rounded-full hover:bg-white/5 active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
+          aria-label="Close"
+        >
+          <span className="material-symbols-outlined !text-[22px]">close</span>
+        </button>
+        <div className="text-xs font-bold tracking-[0.18em] uppercase text-white/50">{STRINGS.sessionProceedInfoTitle}</div>
+        <div className="w-9" />
+      </div>
+
+      <div className="flex-1 flex flex-col justify-center px-6 text-center">
+        <div className="text-xl font-extrabold mb-3">{mode === 'intercepted' ? STRINGS.bubbleProceedGate : STRINGS.bubbleProceedSafe}</div>
+        <div className="text-sm text-white/45 leading-relaxed">{detail}</div>
+      </div>
+
+      <div className="px-6 pb-8 shrink-0 flex flex-col gap-3">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onGoToTargetApp();
+          }}
+          className="w-full h-12 rounded-xl bg-white/10 hover:bg-white/15 transition active:scale-[0.98] font-bold"
+          style={{ touchAction: 'manipulation' }}
+        >
+          回到外卖 App
+        </button>
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
+          className="w-full h-12 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 transition active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
+        >
+          留在喂喂
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TabBar({ active, onSelect }: { active: TabKey; onSelect: (tab: TabKey) => void }) {
+  const tabBtn = (tab: TabKey, label: string, icon: string) => {
+    const isActive = active === tab;
+    return (
+      <button
+        type="button"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          onSelect(tab);
+        }}
+        className="flex-1 h-[58px] grid place-items-center"
+        style={{ touchAction: 'manipulation' }}
+        aria-label={label}
+      >
+        <div
+          className={[
+            'w-[46px] h-[46px] rounded-full grid place-items-center transition',
+            isActive
+              ? 'bg-gradient-to-br from-[#FEDCFF] to-[#D1FAFF] text-[#222433] shadow-[0_12px_28px_rgba(255,255,255,0.14)]'
+              : 'text-white/85',
+          ].join(' ')}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+            {icon}
+          </span>
+        </div>
+      </button>
+    );
+  };
+
   return (
     <div
-      className="relative w-full h-full overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, #FEDCFF 0%, #D1FAFF 100%)' }}
+      className="h-[58px] w-[280px] rounded-full border border-white/10 shadow-[0_14px_30px_rgba(0,0,0,0.28)] overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, rgba(34,36,51,1) 0%, rgba(13,16,40,1) 100%)',
+      }}
     >
-      <div className="absolute rounded-full blur-[300px]" style={{ ...rect(-149, 138, 346, 352), background: '#FFF8D9' }} />
-      <div className="absolute rounded-full blur-[300px]" style={{ ...rect(220, 294, 276, 281), background: '#FFF8D9' }} />
-
-      {/* Avatar + LV.1 */}
-      <div className="absolute rounded-full border border-white/60 bg-white/35 backdrop-blur-xl" style={{ ...rect(18.05, 33.05, 75.9, 75.9) }} />
-      <div
-        className="absolute"
-        style={{
-          ...rect(94, 62, 50, 18),
-          color: '#1D2547',
-          fontFamily: '"Noto Sans SC","Manrope",system-ui,sans-serif',
-          fontWeight: 700,
-          fontSize: 12,
-          lineHeight: '16px',
-        }}
-      >
-        LV.1
+      <div className="h-full w-full flex items-center">
+        {tabBtn('review', 'Review', 'bar_chart')}
+        {tabBtn('home', 'Home', 'home')}
+        {tabBtn('setup', 'Setup', 'shield')}
       </div>
-
-      {/* Settings (Figma exported) */}
-      <button
-        type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          onSettings();
-        }}
-        className="absolute border-0 bg-transparent p-0 active:scale-[0.98]"
-        style={{ ...rect(325, 51, 40, 40), touchAction: 'manipulation' }}
-        aria-label="Settings"
-      >
-        <img alt="" src="/figma/weiwei-wzx/ui/settings_button.svg" className="w-full h-full" draggable={false} />
-      </button>
-
-      {/* Tip pill */}
-      <div
-        className="absolute rounded-[22px] backdrop-blur-xl"
-        style={{ ...rect(144, 126, 182, 79), background: 'rgba(252,252,252,0.70)' }}
-      />
-      <div
-        className="absolute"
-        style={{
-          ...rect(164, 157, 200, 16),
-          color: '#000',
-          fontFamily: '"Noto Sans SC","Manrope",system-ui,sans-serif',
-          fontWeight: 300,
-          fontSize: 12,
-          lineHeight: '15px',
-        }}
-      >
-        冲动很正常，我们先慢下来
-      </div>
-
-      {/* Monster */}
-      <div style={{ ...rect(86, 210, 222, 224) }} className="absolute">
-        <img
-          alt="Monster"
-          src="/figma/weiwei-wzx/ui/monster_feeling.png"
-          className="absolute inset-0 w-full h-full"
-          style={{ objectFit: 'cover', opacity: 0.90 }}
-          draggable={false}
-          decoding="async"
-          loading="eager"
-        />
-      </div>
-      <div className="absolute rounded-full" style={{ ...rect(94, 410, 205, 30), background: 'rgba(0,0,0,0.05)' }} />
-      <div className="absolute rounded-full" style={{ ...rect(123, 410, 162, 24), background: 'rgba(0,0,0,0.05)' }} />
-
-      {/* Options (from Figma text positions & hotspot rows) */}
-      {[
-        { label: '今天很糟糕', y: 466, iconSrc: '/figma/weiwei-wzx/ui/feeling_icon_1.svg' },
-        { label: '说不上来，很难受', y: 540, iconSrc: '/figma/weiwei-wzx/ui/feeling_icon_2.svg' },
-        { label: '压力太大了', y: 614, iconSrc: '/figma/weiwei-wzx/ui/feeling_icon_3.svg' },
-      ].map((o, idx) => (
-        <button
-          key={o.label}
-          type="button"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            onPick(idx as 0 | 1 | 2);
-          }}
-          className="absolute rounded-[28px] border border-white/70 bg-white/70 backdrop-blur-xl shadow-[0_16px_40px_rgba(0,0,0,0.10)] active:scale-[0.99] transition-transform"
-          style={{ ...rect(79, o.y, 290, 84.985), touchAction: 'manipulation' }}
-          aria-label={o.label}
-        >
-          <div className="absolute inset-0 rounded-[28px]" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55)' }} />
-          <div
-            className="absolute rounded-full bg-white/60 border border-white/70 grid place-items-center overflow-hidden"
-            style={{ ...rect(12, 12, 60.98, 60.98) }}
-          >
-            <img alt="" src={o.iconSrc} className="w-[40px] h-[40px]" draggable={false} />
-          </div>
-          <div
-            className="absolute"
-            style={{
-              left: pct(96, 290),
-              top: pct(28, 84.985),
-              fontFamily: '"Noto Sans SC","Manrope",system-ui,sans-serif',
-              fontWeight: 300,
-              fontSize: 16,
-              lineHeight: '20px',
-              color: '#000',
-            }}
-          >
-            {o.label}
-          </div>
-        </button>
-      ))}
-
-      {/* Bottom nav (from Figma frame 1:405) */}
-      <div
-        className="absolute rounded-[30px]"
-        style={{
-          ...rect(107, 744, 170, 54),
-          background: '#1D2547',
-          backdropFilter: 'blur(15px)',
-          WebkitBackdropFilter: 'blur(15px)',
-        }}
-      />
-      <button
-        type="button"
-        className="absolute grid place-items-center active:scale-[0.98]"
-        style={{ ...rect(123, 761, 20, 20), touchAction: 'manipulation' }}
-        aria-label="Trends"
-      >
-        <img alt="" src="/figma/weiwei-wzx/ui/tab_trends.svg" className="w-[20px] h-[20px]" draggable={false} />
-      </button>
-      <button
-        type="button"
-        className="absolute grid place-items-center active:scale-[0.98]"
-        style={{ ...rect(161, 744, 54, 54), touchAction: 'manipulation' }}
-        aria-label="Home"
-      >
-        <img alt="" src="/figma/weiwei-wzx/ui/tab_home.svg" className="w-[54px] h-[54px]" draggable={false} />
-      </button>
-      <button
-        type="button"
-        className="absolute grid place-items-center active:scale-[0.98]"
-        style={{ ...rect(237, 761, 20, 20), touchAction: 'manipulation' }}
-        aria-label="Guard"
-      >
-        <img alt="" src="/figma/weiwei-wzx/ui/tab_guard.svg" className="w-[20px] h-[20px]" draggable={false} />
-      </button>
-
-      {debugOverlay && (
-        <img
-          alt=""
-          src={`/figma/weiwei-wzx/frames/${frameId.replace(/:/g, '-')}.svg`}
-          className="absolute inset-0 w-full h-full pointer-events-none select-none"
-          style={{ opacity: 0.35, mixBlendMode: 'difference' }}
-          draggable={false}
-        />
-      )}
     </div>
   );
 }
 
-export default function WeiweiApp({
-  frameId,
-  cursor,
-  navKind,
-  stackLen,
-  stats,
-  selectedEmotion,
-  onSetEmotion,
-  onExit,
-  onPop,
-  onOpen,
-  debugOverlay,
-}: Props) {
-  const anim = (() => {
-    if (navKind === 'push') return { type: 'slide' as const, dir: 1 };
-    if (navKind === 'pop') return { type: 'slide' as const, dir: -1 };
-    return { type: 'fade' as const, dir: 0 };
-  })();
+export default function WeiweiApp({ state, onUpdate, onExit, onProceedToTargetApp }: Props) {
+  const [tab, setTab] = useState<TabKey>('home');
+  const [reviewStage, setReviewStage] = useState<'daily' | 'weekly'>('daily');
+  const [sessionMode, setSessionMode] = useState<SessionMode | null>(null);
+  const [sessionStep, setSessionStep] = useState<SessionStep>('action');
+  const [didCompleteAction, setDidCompleteAction] = useState(false);
 
-  const variants = {
-    initial: (custom: { type: 'fade' | 'slide'; dir: number }) => {
-      if (custom.type === 'slide') return { x: custom.dir > 0 ? 28 : -28, opacity: 0, pointerEvents: 'none' as const };
-      return { opacity: 0, scale: 0.995, pointerEvents: 'none' as const };
-    },
-    animate: { x: 0, opacity: 1, scale: 1, pointerEvents: 'auto' as const },
-    exit: (custom: { type: 'fade' | 'slide'; dir: number }) => {
-      if (custom.type === 'slide') return { x: custom.dir > 0 ? -28 : 28, opacity: 0, pointerEvents: 'none' as const };
-      return { opacity: 0, scale: 1.005, pointerEvents: 'none' as const };
-    },
-  } as const;
+  const guard = state.guard;
 
-  const node = (() => {
-    if (isFrameInCategory(frameId, 'home')) {
-      return <HomeFigma frameId={frameId} debugOverlay={debugOverlay} onStart={() => onOpen(WEIWEI_FRAMES.feeling[0])} />;
+  const requiredSeconds = useMemo(() => {
+    if (sessionMode === 'intercepted') return guard.minActionSeconds;
+    return 60;
+  }, [guard.minActionSeconds, sessionMode]);
+
+  useEffect(() => {
+    if (!state.weiweiLaunchMode) return;
+    const mode: SessionMode = state.weiweiLaunchMode === 'intercepted' ? 'intercepted' : 'selfInitiated';
+    setTab('home');
+    setSessionMode(mode);
+    setSessionStep('action');
+    setDidCompleteAction(false);
+    onUpdate({ weiweiLaunchMode: undefined });
+  }, [onUpdate, state.weiweiLaunchMode]);
+
+  const openSession = (mode: SessionMode) => {
+    setSessionMode(mode);
+    setSessionStep('action');
+    setDidCompleteAction(false);
+  };
+
+  const closeSession = () => {
+    setSessionMode(null);
+    setSessionStep('action');
+    setDidCompleteAction(false);
+  };
+
+  const stageStatus = guard.enabled ? STRINGS.stageStatusActive : STRINGS.stageStatusNotEnabled;
+
+  const content = useMemo(() => {
+    if (tab === 'review') {
+      if (reviewStage === 'daily') {
+        return <DailyReview stats={state.stats} onNext={() => setReviewStage('weekly')} />;
+      }
+      return <WeeklyReview onRestart={() => setReviewStage('daily')} onBack={() => setReviewStage('daily')} />;
     }
-    if (isFrameInCategory(frameId, 'stage')) {
+
+    if (tab === 'setup') {
       return (
-        <FocusDashboard
-          stats={stats}
-          onSimulateInterruption={() => onExit()}
-          onEndFocus={() => (stackLen <= 1 ? onExit() : onPop())}
-          onHome={() => onExit()}
-          onSettings={() => onOpen(WEIWEI_FRAMES.guard[0])}
+        <Settings
+          state={state}
+          onUpdate={(updates) => onUpdate(updates)}
+          onBack={() => setTab('home')}
         />
       );
     }
-    if (isFrameInCategory(frameId, 'feeling')) {
-      return (
-        <FeelingFigma
-          frameId={frameId}
-          debugOverlay={debugOverlay}
-          onSettings={() => onOpen(WEIWEI_FRAMES.guard[0], { replace: true })}
-          onPick={(choice) => {
-            const mapped: EmotionType = choice === 0 ? 'stress' : choice === 1 ? 'hunger' : 'habit';
-            onSetEmotion(mapped);
-            onOpen(WEIWEI_FRAMES.breathing[cursor % WEIWEI_FRAMES.breathing.length]);
-          }}
-        />
-      );
-    }
-    if (isFrameInCategory(frameId, 'breathing')) {
-      return (
-        <Breathing
-          onComplete={() => {
-            onOpen(WEIWEI_FRAMES.checkin[cursor % WEIWEI_FRAMES.checkin.length], { replace: true });
-          }}
-        />
-      );
-    }
-    if (isFrameInCategory(frameId, 'checkin')) {
-      return (
-        <CheckInScreen
-          onBack={() => onPop()}
-          onPick={(idx) => onOpen(WEIWEI_FRAMES.desire[(cursor + idx) % WEIWEI_FRAMES.desire.length])}
-        />
-      );
-    }
-    if (isFrameInCategory(frameId, 'desire')) {
-      return (
-        <DesireScreen
-          onBack={() => onPop()}
-          onPick={(idx) => onOpen(WEIWEI_FRAMES.actions[(cursor + idx) % WEIWEI_FRAMES.actions.length])}
-        />
-      );
-    }
-    if (isFrameInCategory(frameId, 'actions')) {
-      return (
-        <ActionSuggestion
-          emotion={selectedEmotion ?? 'stress'}
-          onBack={() => onPop()}
-          onSurrender={() => onExit()}
-          onActionSelect={(actionId) => {
-            if (actionId === 'breathing') {
-              onOpen(WEIWEI_FRAMES.breathing[cursor % WEIWEI_FRAMES.breathing.length]);
-              return;
-            }
-            onOpen(WEIWEI_FRAMES.trends[0], { replace: true });
-          }}
-        />
-      );
-    }
-    if (isFrameInCategory(frameId, 'trends')) {
-      return <WeeklyReview onBack={() => onExit()} onRestart={() => onOpen(WEIWEI_FRAMES.home[0], { replace: true })} />;
-    }
-    if (isFrameInCategory(frameId, 'guard')) {
-      return (
-        <WeeklyReview
-          onBack={() => (stackLen <= 1 ? onExit() : onPop())}
-          onRestart={() => onOpen(WEIWEI_FRAMES.stage[0], { replace: true })}
-        />
-      );
-    }
-    return <HomeFigma frameId={frameId} debugOverlay={debugOverlay} onStart={() => onOpen(WEIWEI_FRAMES.feeling[0])} />;
-  })();
+
+    return (
+      <div className="relative w-full h-full overflow-hidden">
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #FEDCFF 0%, #D1FAFF 100%)' }} />
+        <div className="absolute rounded-full blur-[240px]" style={{ left: -120, top: 120, width: 320, height: 320, background: '#FFF8D9' }} />
+        <div className="absolute rounded-full blur-[240px]" style={{ left: 220, top: 320, width: 260, height: 260, background: '#FFF8D9' }} />
+
+        <div className="absolute inset-0 px-6 pt-10 pb-28 flex flex-col">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                onExit();
+              }}
+              className="w-10 h-10 rounded-full bg-white/50 hover:bg-white/70 active:scale-[0.98] transition grid place-items-center"
+              style={{ touchAction: 'manipulation' }}
+              aria-label="Exit"
+            >
+              <span className="material-symbols-outlined text-[#1D2547]">close</span>
+            </button>
+
+            <div className="px-4 h-10 rounded-full bg-white/55 border border-white/60 flex items-center gap-2 shadow-sm">
+              <span className="w-2 h-2 rounded-full" style={{ background: guard.enabled ? '#2EAF74' : '#757575' }} />
+              <div className="text-xs font-bold text-[#1D2547]">{stageStatus}</div>
+            </div>
+
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                setTab('setup');
+              }}
+              className="w-10 h-10 rounded-full bg-white/50 hover:bg-white/70 active:scale-[0.98] transition grid place-items-center"
+              style={{ touchAction: 'manipulation' }}
+              aria-label="Settings"
+            >
+              <span className="material-symbols-outlined text-[#1D2547]">settings</span>
+            </button>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <div className="text-2xl font-extrabold text-[#1D2547] leading-snug">{STRINGS.stageBubbleDefault}</div>
+            <div className="mt-3 text-sm text-[#1D2547]/65 leading-relaxed">
+              {guard.enabled ? '打开外卖 App 会触发拦截。' : '你也可以随时用 SOS 进入自助会话。'}
+            </div>
+
+            <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-[320px]">
+              <div className="rounded-2xl bg-white/55 border border-white/70 p-4 shadow-sm">
+                <div className="text-[10px] font-bold text-[#1D2547]/55 tracking-widest">冲动</div>
+                <div className="mt-1 text-2xl font-extrabold text-[#1D2547] tabular-nums">{state.stats.attempts}</div>
+              </div>
+              <div className="rounded-2xl bg-white/55 border border-white/70 p-4 shadow-sm">
+                <div className="text-[10px] font-bold text-[#1D2547]/55 tracking-widest">回头</div>
+                <div className="mt-1 text-2xl font-extrabold text-[#1D2547] tabular-nums">{state.stats.returns}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                openSession('selfInitiated');
+              }}
+              className="w-full h-12 rounded-xl bg-[#1D2547] text-white font-bold shadow-[0_10px_24px_rgba(29,37,71,0.25)] active:scale-[0.98] transition"
+              style={{ touchAction: 'manipulation' }}
+            >
+              SOS：先停一下
+            </button>
+
+            {!guard.enabled && (
+              <button
+                type="button"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  onUpdate({
+                    guard: {
+                      ...guard,
+                      enabled: true,
+                      updatedAt: Date.now(),
+                    },
+                  });
+                }}
+                className="w-full h-12 rounded-xl bg-white/55 border border-white/70 text-[#1D2547] font-bold active:scale-[0.98] transition"
+                style={{ touchAction: 'manipulation' }}
+              >
+                启用守护
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }, [guard, onExit, onUpdate, reviewStage, state, tab]);
+
+  const showSession = sessionMode != null;
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-black">
-      <AnimatePresence mode="sync" initial={false} custom={anim}>
-        <motion.div
-          key={frameId}
-          className="absolute inset-0"
-          custom={anim}
-          variants={variants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={{ duration: 0.16, ease: 'easeOut' }}
-        >
-          {node}
-        </motion.div>
+      {content}
+
+      <div className="absolute left-0 right-0 bottom-6 flex justify-center pointer-events-none z-20">
+        <div className="pointer-events-auto">
+          <TabBar
+            active={tab}
+            onSelect={(next) => {
+              if (showSession) return;
+              setReviewStage('daily');
+              setTab(next);
+            }}
+          />
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {showSession && (
+          <motion.div
+            className="absolute inset-0 z-30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-black/55"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                closeSession();
+              }}
+            />
+
+            <motion.div
+              className="absolute inset-x-0 bottom-0"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 30, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+              style={{ height: 'min(760px, 92vh)' }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className="h-full rounded-t-[28px] overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.55)]">
+                {sessionStep === 'action' && (
+                  <SessionAction
+                    requiredSeconds={requiredSeconds}
+                    onClose={closeSession}
+                    onComplete={() => {
+                      setDidCompleteAction(true);
+                      setSessionStep('reflection');
+                    }}
+                  />
+                )}
+
+                {sessionStep === 'reflection' && (
+                  <EmotionRecognition
+                    onBack={() => closeSession()}
+                    onSelectEmotion={(emotion: EmotionType) => {
+                      onUpdate({ selectedEmotion: emotion });
+                      setSessionStep('result');
+                    }}
+                  />
+                )}
+
+                {sessionStep === 'result' && (
+                  <SessionResult
+                    mode={sessionMode!}
+                    intensity={guard.intensity}
+                    requiredSeconds={requiredSeconds}
+                    didCompleteAction={didCompleteAction}
+                    onClose={closeSession}
+                    onBack={() => closeSession()}
+                    onDelay={() => setSessionStep('delay')}
+                    onProceed={() => setSessionStep('proceedInfo')}
+                  />
+                )}
+
+                {sessionStep === 'delay' && (
+                  <SessionDelay
+                    seconds={120}
+                    onClose={closeSession}
+                    onBackToResult={() => setSessionStep('result')}
+                  />
+                )}
+
+                {sessionStep === 'proceedInfo' && (
+                  <ProceedInfo
+                    mode={sessionMode!}
+                    didCompleteAction={didCompleteAction}
+                    requiredSeconds={requiredSeconds}
+                    onClose={closeSession}
+                    onGoToTargetApp={() => {
+                      closeSession();
+                      onProceedToTargetApp();
+                    }}
+                  />
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
